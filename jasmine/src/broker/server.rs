@@ -1,10 +1,11 @@
-use util::{message::MQJJMessage, result::{MQJJError, MQJJResult}};
+use util::{transaction::JasmineMessage, result::{JasmineError, JasmineResult}};
 use std::collections::{HashMap, HashSet};
 use async_trait::async_trait;
 
 #[async_trait]
-pub trait MQJJBroker {
-    fn on_pub_message(&self, topic: String, message: MQJJMessage) -> MQJJResult<u64>;
+pub trait JasmineBroker {
+    async fn on_pub_message(&self, topic: String, message: JasmineMessage) -> JasmineResult<u64>;
+    // async fn on_connect()
 }
 
 pub struct BrokerServer {
@@ -12,8 +13,8 @@ pub struct BrokerServer {
 }
 
 #[async_trait]
-impl MQJJBroker for BrokerServer {
-    async fn on_pub_message(&self, topic: String, message: MQJJMessage) -> MQJJResult<u64> {
+impl JasmineBroker for BrokerServer {
+    async fn on_pub_message(&self, topic: String, message: JasmineMessage) -> JasmineResult<u64> {
         let subscriber_set = match self.subscriber_map.get(&topic) {
             Some(set) => set,
             None => {

@@ -8,4 +8,5 @@ mod tests {
 }
 
 pub mod result;
-pub mod message;
+pub mod transaction;
+pub mod rpc;
