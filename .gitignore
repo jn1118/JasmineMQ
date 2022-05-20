@@ -1,4 +1,4 @@
 */.DS
 *.DS
 ./target/*
-/target/
+target/
