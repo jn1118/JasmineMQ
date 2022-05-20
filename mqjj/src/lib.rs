@@ -7,6 +7,6 @@ mod tests {
     }
 }
 
-pub mod publisher;
-pub mod subscriber;
 pub mod client;
+pub mod broker;
+pub mod storage;

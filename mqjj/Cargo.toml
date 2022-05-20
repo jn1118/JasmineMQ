@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 util = {path = "../util"}
+async-trait = "0.1.53"
+

@@ -7,3 +7,7 @@ pub enum MQJJError {
     Unknown(String),
 }
 
+pub fn mqjj_error_handler(error: MQJJError) -> MQJJResult<()> {
+    todo!();
+}
+

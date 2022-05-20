@@ -1,6 +1,6 @@
 use util::{result::{MQJJError, MQJJResult}, message::MQJJMessage};
-use crate::publisher::MQJJPublisher;
-use crate::subscriber::MQJJSubscriber;
+
+use super::{publisher::MQJJPublisher, subscriber::MQJJSubscriber};
 
 pub trait MQJJClient: MQJJPublisher + MQJJSubscriber {
     fn new() -> MQJJResult<Box<Self>>;
@@ -10,7 +10,7 @@ pub trait MQJJClient: MQJJPublisher + MQJJSubscriber {
 }
 
 pub struct Client {
-
+    client_id: u64,
 }
 
 impl MQJJClient for Client {
