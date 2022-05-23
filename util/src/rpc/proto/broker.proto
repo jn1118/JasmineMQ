@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package broker;
+
+message PublishRequest {
+    string topic = 1;
+    string message = 2; 
+}
+
+message PublishResponse {
+    bool success = 1;
+    uint64 count = 2;
+}
+
+message SubscribeRequest{
+    string address = 1;
+    string topic = 2;
+}
+
+message SubscribeResponse {
+    bool success = 1;
+}
+
+message Empty {
+    
+}
+
+service JasmineBroker {
+    rpc publish (PublishRequest) returns (Empty);
+    rpc subscribe (SubscribeRequest) returns (Empty);
+    rpc unsubscribe (SubscribeRequest) returns (Empty);
+    rpc ping(Empty) returns (Empty);
+}

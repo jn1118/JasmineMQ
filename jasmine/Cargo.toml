@@ -9,5 +9,9 @@ edition = "2021"
 util = {path = "../util"}
 async-trait = "0.1.53"
 tokio = {version = "1.18.2", features = ["full"]} 
+tonic = "0.6"
+
+[dependencies.redis]
+version = "*"
 
 
