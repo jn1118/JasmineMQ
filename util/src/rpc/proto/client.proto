@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package client;
+
+message Message {
+    string topic = 2;
+    string message = 3;
+}
+
+message Bool {
+    bool value = 1;
+}
+
+message Empty {
+
+}
+
+service Client {
+    rpc send_message (Message) returns (Bool);
+    rpc ping (Empty) returns (Empty); 
+}

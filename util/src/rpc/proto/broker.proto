@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package broker;
+
+message PublishRequest {
+    string topic = 2;
+    string message = 3; 
+}
+
+message PublishResponse {
+    bool success = 1;
+    uint64 count = 2;
+}
+
+message SubscribeRequest{
+    string topic = 2;
+}
+
+message SubscribeResponse {
+    bool success = 1;
+}
+
+message Empty {
+    
+}
+
+service Broker {
+    rpc publish (PublishRequest) returns (PublishResponse);
+    rpc subscribe (SubscribeRequest) returns (SubscribeResponse);
+    rpc unsubscribe (SubscribeRequest) returns (SubscribeResponse);
+    rpc ping(Empty) returns (Empty);
+}
