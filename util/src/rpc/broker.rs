@@ -25,6 +25,11 @@ pub struct SubscribeResponse {
     pub success: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConnectRequest {
+    #[prost(string, tag = "1")]
+    pub address: ::prost::alloc::string::String,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}
 #[doc = r" Generated client implementations."]
 pub mod jasmine_broker_client {
@@ -128,6 +133,34 @@ pub mod jasmine_broker_client {
             let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/unsubscribe");
             self.inner.unary(request.into_request(), path, codec).await
         }
+        pub async fn hook(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ConnectRequest>,
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/hook");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
+        pub async fn unhook(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ConnectRequest>,
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/unhook");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
         pub async fn ping(
             &mut self,
             request: impl tonic::IntoRequest<super::Empty>,
@@ -162,6 +195,14 @@ pub mod jasmine_broker_server {
         async fn unsubscribe(
             &self,
             request: tonic::Request<super::SubscribeRequest>,
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
+        async fn hook(
+            &self,
+            request: tonic::Request<super::ConnectRequest>,
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
+        async fn unhook(
+            &self,
+            request: tonic::Request<super::ConnectRequest>,
         ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
         async fn ping(
             &self,
@@ -290,6 +331,68 @@ pub mod jasmine_broker_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = unsubscribeSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/broker.JasmineBroker/hook" => {
+                    #[allow(non_camel_case_types)]
+                    struct hookSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::ConnectRequest> for hookSvc<T> {
+                        type Response = super::Empty;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ConnectRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).hook(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = hookSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/broker.JasmineBroker/unhook" => {
+                    #[allow(non_camel_case_types)]
+                    struct unhookSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::ConnectRequest> for unhookSvc<T> {
+                        type Response = super::Empty;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ConnectRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).unhook(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = unhookSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
                             accept_compression_encodings,

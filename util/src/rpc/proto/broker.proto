@@ -21,6 +21,11 @@ message SubscribeResponse {
     bool success = 1;
 }
 
+message ConnectRequest {
+    string address = 1;
+}
+
+
 message Empty {
     
 }
@@ -29,5 +34,7 @@ service JasmineBroker {
     rpc publish (PublishRequest) returns (Empty);
     rpc subscribe (SubscribeRequest) returns (Empty);
     rpc unsubscribe (SubscribeRequest) returns (Empty);
+    rpc hook (ConnectRequest) returns (Empty);
+    rpc unhook (ConnectRequest) returns (Empty);
     rpc ping(Empty) returns (Empty);
 }
