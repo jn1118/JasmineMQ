@@ -3,8 +3,8 @@ syntax = "proto3";
 package broker;
 
 message PublishRequest {
-    string topic = 2;
-    string message = 3; 
+    string topic = 1;
+    string message = 2; 
 }
 
 message PublishResponse {
@@ -13,6 +13,7 @@ message PublishResponse {
 }
 
 message SubscribeRequest{
+    string address = 1;
     string topic = 2;
 }
 
@@ -24,9 +25,9 @@ message Empty {
     
 }
 
-service Broker {
-    rpc publish (PublishRequest) returns (PublishResponse);
-    rpc subscribe (SubscribeRequest) returns (SubscribeResponse);
-    rpc unsubscribe (SubscribeRequest) returns (SubscribeResponse);
+service JasmineBroker {
+    rpc publish (PublishRequest) returns (Empty);
+    rpc subscribe (SubscribeRequest) returns (Empty);
+    rpc unsubscribe (SubscribeRequest) returns (Empty);
     rpc ping(Empty) returns (Empty);
 }

@@ -15,7 +15,7 @@ message Empty {
 
 }
 
-service Client {
+service JasmineClient {
     rpc send_message (Message) returns (Bool);
     rpc ping (Empty) returns (Empty); 
 }

@@ -25,7 +25,7 @@ message Empty {
 
 }
 
-service Storage {
+service JasmineStorage {
     rpc set (KeyValue) returns (Bool);
     rpc get (Key) returns (Value);
     rpc ping (Empty) returns (Empty);

@@ -13,14 +13,14 @@ pub struct Bool {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}
 #[doc = r" Generated client implementations."]
-pub mod client_client {
+pub mod jasmine_client_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     #[derive(Debug, Clone)]
-    pub struct ClientClient<T> {
+    pub struct JasmineClientClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl ClientClient<tonic::transport::Channel> {
+    impl JasmineClientClient<tonic::transport::Channel> {
         #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -31,7 +31,7 @@ pub mod client_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> ClientClient<T>
+    impl<T> JasmineClientClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::ResponseBody: Body + Send + 'static,
@@ -45,7 +45,7 @@ pub mod client_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> ClientClient<InterceptedService<T, F>>
+        ) -> JasmineClientClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T: tonic::codegen::Service<
@@ -57,7 +57,7 @@ pub mod client_client {
             <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
                 Into<StdError> + Send + Sync,
         {
-            ClientClient::new(InterceptedService::new(inner, interceptor))
+            JasmineClientClient::new(InterceptedService::new(inner, interceptor))
         }
         #[doc = r" Compress requests with `gzip`."]
         #[doc = r""]
@@ -83,7 +83,7 @@ pub mod client_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/client.Client/send_message");
+            let path = http::uri::PathAndQuery::from_static("/client.JasmineClient/send_message");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn ping(
@@ -97,18 +97,18 @@ pub mod client_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/client.Client/ping");
+            let path = http::uri::PathAndQuery::from_static("/client.JasmineClient/ping");
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
 }
 #[doc = r" Generated server implementations."]
-pub mod client_server {
+pub mod jasmine_client_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    #[doc = "Generated trait containing gRPC methods that should be implemented for use with ClientServer."]
+    #[doc = "Generated trait containing gRPC methods that should be implemented for use with JasmineClientServer."]
     #[async_trait]
-    pub trait Client: Send + Sync + 'static {
+    pub trait JasmineClient: Send + Sync + 'static {
         async fn send_message(
             &self,
             request: tonic::Request<super::Message>,
@@ -119,13 +119,13 @@ pub mod client_server {
         ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct ClientServer<T: Client> {
+    pub struct JasmineClientServer<T: JasmineClient> {
         inner: _Inner<T>,
         accept_compression_encodings: (),
         send_compression_encodings: (),
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: Client> ClientServer<T> {
+    impl<T: JasmineClient> JasmineClientServer<T> {
         pub fn new(inner: T) -> Self {
             let inner = Arc::new(inner);
             let inner = _Inner(inner);
@@ -142,9 +142,9 @@ pub mod client_server {
             InterceptedService::new(Self::new(inner), interceptor)
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for ClientServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for JasmineClientServer<T>
     where
-        T: Client,
+        T: JasmineClient,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -157,10 +157,10 @@ pub mod client_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/client.Client/send_message" => {
+                "/client.JasmineClient/send_message" => {
                     #[allow(non_camel_case_types)]
-                    struct send_messageSvc<T: Client>(pub Arc<T>);
-                    impl<T: Client> tonic::server::UnaryService<super::Message> for send_messageSvc<T> {
+                    struct send_messageSvc<T: JasmineClient>(pub Arc<T>);
+                    impl<T: JasmineClient> tonic::server::UnaryService<super::Message> for send_messageSvc<T> {
                         type Response = super::Bool;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
@@ -188,10 +188,10 @@ pub mod client_server {
                     };
                     Box::pin(fut)
                 }
-                "/client.Client/ping" => {
+                "/client.JasmineClient/ping" => {
                     #[allow(non_camel_case_types)]
-                    struct pingSvc<T: Client>(pub Arc<T>);
-                    impl<T: Client> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
+                    struct pingSvc<T: JasmineClient>(pub Arc<T>);
+                    impl<T: JasmineClient> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
                         type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Empty>) -> Self::Future {
@@ -227,7 +227,7 @@ pub mod client_server {
             }
         }
     }
-    impl<T: Client> Clone for ClientServer<T> {
+    impl<T: JasmineClient> Clone for JasmineClientServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -237,7 +237,7 @@ pub mod client_server {
             }
         }
     }
-    impl<T: Client> Clone for _Inner<T> {
+    impl<T: JasmineClient> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(self.0.clone())
         }
@@ -247,7 +247,7 @@ pub mod client_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Client> tonic::transport::NamedService for ClientServer<T> {
-        const NAME: &'static str = "client.Client";
+    impl<T: JasmineClient> tonic::transport::NamedService for JasmineClientServer<T> {
+        const NAME: &'static str = "client.JasmineClient";
     }
 }

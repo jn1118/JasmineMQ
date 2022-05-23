@@ -1,8 +1,8 @@
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PublishRequest {
-    #[prost(string, tag = "2")]
+    #[prost(string, tag = "1")]
     pub topic: ::prost::alloc::string::String,
-    #[prost(string, tag = "3")]
+    #[prost(string, tag = "2")]
     pub message: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -14,6 +14,8 @@ pub struct PublishResponse {
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct SubscribeRequest {
+    #[prost(string, tag = "1")]
+    pub address: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub topic: ::prost::alloc::string::String,
 }
@@ -25,14 +27,14 @@ pub struct SubscribeResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}
 #[doc = r" Generated client implementations."]
-pub mod broker_client {
+pub mod jasmine_broker_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     #[derive(Debug, Clone)]
-    pub struct BrokerClient<T> {
+    pub struct JasmineBrokerClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl BrokerClient<tonic::transport::Channel> {
+    impl JasmineBrokerClient<tonic::transport::Channel> {
         #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -43,7 +45,7 @@ pub mod broker_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> BrokerClient<T>
+    impl<T> JasmineBrokerClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::ResponseBody: Body + Send + 'static,
@@ -57,7 +59,7 @@ pub mod broker_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> BrokerClient<InterceptedService<T, F>>
+        ) -> JasmineBrokerClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T: tonic::codegen::Service<
@@ -69,7 +71,7 @@ pub mod broker_client {
             <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
                 Into<StdError> + Send + Sync,
         {
-            BrokerClient::new(InterceptedService::new(inner, interceptor))
+            JasmineBrokerClient::new(InterceptedService::new(inner, interceptor))
         }
         #[doc = r" Compress requests with `gzip`."]
         #[doc = r""]
@@ -87,7 +89,7 @@ pub mod broker_client {
         pub async fn publish(
             &mut self,
             request: impl tonic::IntoRequest<super::PublishRequest>,
-        ) -> Result<tonic::Response<super::PublishResponse>, tonic::Status> {
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
                 tonic::Status::new(
                     tonic::Code::Unknown,
@@ -95,13 +97,13 @@ pub mod broker_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/broker.Broker/publish");
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/publish");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn subscribe(
             &mut self,
             request: impl tonic::IntoRequest<super::SubscribeRequest>,
-        ) -> Result<tonic::Response<super::SubscribeResponse>, tonic::Status> {
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
                 tonic::Status::new(
                     tonic::Code::Unknown,
@@ -109,13 +111,13 @@ pub mod broker_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/broker.Broker/subscribe");
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/subscribe");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn unsubscribe(
             &mut self,
             request: impl tonic::IntoRequest<super::SubscribeRequest>,
-        ) -> Result<tonic::Response<super::SubscribeResponse>, tonic::Status> {
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status> {
             self.inner.ready().await.map_err(|e| {
                 tonic::Status::new(
                     tonic::Code::Unknown,
@@ -123,7 +125,7 @@ pub mod broker_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/broker.Broker/unsubscribe");
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/unsubscribe");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn ping(
@@ -137,43 +139,43 @@ pub mod broker_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/broker.Broker/ping");
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/ping");
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
 }
 #[doc = r" Generated server implementations."]
-pub mod broker_server {
+pub mod jasmine_broker_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    #[doc = "Generated trait containing gRPC methods that should be implemented for use with BrokerServer."]
+    #[doc = "Generated trait containing gRPC methods that should be implemented for use with JasmineBrokerServer."]
     #[async_trait]
-    pub trait Broker: Send + Sync + 'static {
+    pub trait JasmineBroker: Send + Sync + 'static {
         async fn publish(
             &self,
             request: tonic::Request<super::PublishRequest>,
-        ) -> Result<tonic::Response<super::PublishResponse>, tonic::Status>;
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
         async fn subscribe(
             &self,
             request: tonic::Request<super::SubscribeRequest>,
-        ) -> Result<tonic::Response<super::SubscribeResponse>, tonic::Status>;
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
         async fn unsubscribe(
             &self,
             request: tonic::Request<super::SubscribeRequest>,
-        ) -> Result<tonic::Response<super::SubscribeResponse>, tonic::Status>;
+        ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
         async fn ping(
             &self,
             request: tonic::Request<super::Empty>,
         ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct BrokerServer<T: Broker> {
+    pub struct JasmineBrokerServer<T: JasmineBroker> {
         inner: _Inner<T>,
         accept_compression_encodings: (),
         send_compression_encodings: (),
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: Broker> BrokerServer<T> {
+    impl<T: JasmineBroker> JasmineBrokerServer<T> {
         pub fn new(inner: T) -> Self {
             let inner = Arc::new(inner);
             let inner = _Inner(inner);
@@ -190,9 +192,9 @@ pub mod broker_server {
             InterceptedService::new(Self::new(inner), interceptor)
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for BrokerServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for JasmineBrokerServer<T>
     where
-        T: Broker,
+        T: JasmineBroker,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -205,11 +207,11 @@ pub mod broker_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/broker.Broker/publish" => {
+                "/broker.JasmineBroker/publish" => {
                     #[allow(non_camel_case_types)]
-                    struct publishSvc<T: Broker>(pub Arc<T>);
-                    impl<T: Broker> tonic::server::UnaryService<super::PublishRequest> for publishSvc<T> {
-                        type Response = super::PublishResponse;
+                    struct publishSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::PublishRequest> for publishSvc<T> {
+                        type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
@@ -236,11 +238,11 @@ pub mod broker_server {
                     };
                     Box::pin(fut)
                 }
-                "/broker.Broker/subscribe" => {
+                "/broker.JasmineBroker/subscribe" => {
                     #[allow(non_camel_case_types)]
-                    struct subscribeSvc<T: Broker>(pub Arc<T>);
-                    impl<T: Broker> tonic::server::UnaryService<super::SubscribeRequest> for subscribeSvc<T> {
-                        type Response = super::SubscribeResponse;
+                    struct subscribeSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::SubscribeRequest> for subscribeSvc<T> {
+                        type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
@@ -267,11 +269,11 @@ pub mod broker_server {
                     };
                     Box::pin(fut)
                 }
-                "/broker.Broker/unsubscribe" => {
+                "/broker.JasmineBroker/unsubscribe" => {
                     #[allow(non_camel_case_types)]
-                    struct unsubscribeSvc<T: Broker>(pub Arc<T>);
-                    impl<T: Broker> tonic::server::UnaryService<super::SubscribeRequest> for unsubscribeSvc<T> {
-                        type Response = super::SubscribeResponse;
+                    struct unsubscribeSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::SubscribeRequest> for unsubscribeSvc<T> {
+                        type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
                             &mut self,
@@ -298,10 +300,10 @@ pub mod broker_server {
                     };
                     Box::pin(fut)
                 }
-                "/broker.Broker/ping" => {
+                "/broker.JasmineBroker/ping" => {
                     #[allow(non_camel_case_types)]
-                    struct pingSvc<T: Broker>(pub Arc<T>);
-                    impl<T: Broker> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
+                    struct pingSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
                         type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Empty>) -> Self::Future {
@@ -337,7 +339,7 @@ pub mod broker_server {
             }
         }
     }
-    impl<T: Broker> Clone for BrokerServer<T> {
+    impl<T: JasmineBroker> Clone for JasmineBrokerServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -347,7 +349,7 @@ pub mod broker_server {
             }
         }
     }
-    impl<T: Broker> Clone for _Inner<T> {
+    impl<T: JasmineBroker> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(self.0.clone())
         }
@@ -357,7 +359,7 @@ pub mod broker_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Broker> tonic::transport::NamedService for BrokerServer<T> {
-        const NAME: &'static str = "broker.Broker";
+    impl<T: JasmineBroker> tonic::transport::NamedService for JasmineBrokerServer<T> {
+        const NAME: &'static str = "broker.JasmineBroker";
     }
 }

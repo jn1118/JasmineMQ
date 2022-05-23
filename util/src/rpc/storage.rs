@@ -25,14 +25,14 @@ pub struct Bool {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}
 #[doc = r" Generated client implementations."]
-pub mod storage_client {
+pub mod jasmine_storage_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     #[derive(Debug, Clone)]
-    pub struct StorageClient<T> {
+    pub struct JasmineStorageClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl StorageClient<tonic::transport::Channel> {
+    impl JasmineStorageClient<tonic::transport::Channel> {
         #[doc = r" Attempt to create a new client by connecting to a given endpoint."]
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -43,7 +43,7 @@ pub mod storage_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> StorageClient<T>
+    impl<T> JasmineStorageClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::ResponseBody: Body + Send + 'static,
@@ -57,7 +57,7 @@ pub mod storage_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> StorageClient<InterceptedService<T, F>>
+        ) -> JasmineStorageClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T: tonic::codegen::Service<
@@ -69,7 +69,7 @@ pub mod storage_client {
             <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
                 Into<StdError> + Send + Sync,
         {
-            StorageClient::new(InterceptedService::new(inner, interceptor))
+            JasmineStorageClient::new(InterceptedService::new(inner, interceptor))
         }
         #[doc = r" Compress requests with `gzip`."]
         #[doc = r""]
@@ -95,7 +95,7 @@ pub mod storage_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/storage.Storage/set");
+            let path = http::uri::PathAndQuery::from_static("/storage.JasmineStorage/set");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn get(
@@ -109,7 +109,7 @@ pub mod storage_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/storage.Storage/get");
+            let path = http::uri::PathAndQuery::from_static("/storage.JasmineStorage/get");
             self.inner.unary(request.into_request(), path, codec).await
         }
         pub async fn ping(
@@ -123,18 +123,18 @@ pub mod storage_client {
                 )
             })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/storage.Storage/ping");
+            let path = http::uri::PathAndQuery::from_static("/storage.JasmineStorage/ping");
             self.inner.unary(request.into_request(), path, codec).await
         }
     }
 }
 #[doc = r" Generated server implementations."]
-pub mod storage_server {
+pub mod jasmine_storage_server {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
-    #[doc = "Generated trait containing gRPC methods that should be implemented for use with StorageServer."]
+    #[doc = "Generated trait containing gRPC methods that should be implemented for use with JasmineStorageServer."]
     #[async_trait]
-    pub trait Storage: Send + Sync + 'static {
+    pub trait JasmineStorage: Send + Sync + 'static {
         async fn set(
             &self,
             request: tonic::Request<super::KeyValue>,
@@ -149,13 +149,13 @@ pub mod storage_server {
         ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
     }
     #[derive(Debug)]
-    pub struct StorageServer<T: Storage> {
+    pub struct JasmineStorageServer<T: JasmineStorage> {
         inner: _Inner<T>,
         accept_compression_encodings: (),
         send_compression_encodings: (),
     }
     struct _Inner<T>(Arc<T>);
-    impl<T: Storage> StorageServer<T> {
+    impl<T: JasmineStorage> JasmineStorageServer<T> {
         pub fn new(inner: T) -> Self {
             let inner = Arc::new(inner);
             let inner = _Inner(inner);
@@ -172,9 +172,9 @@ pub mod storage_server {
             InterceptedService::new(Self::new(inner), interceptor)
         }
     }
-    impl<T, B> tonic::codegen::Service<http::Request<B>> for StorageServer<T>
+    impl<T, B> tonic::codegen::Service<http::Request<B>> for JasmineStorageServer<T>
     where
-        T: Storage,
+        T: JasmineStorage,
         B: Body + Send + 'static,
         B::Error: Into<StdError> + Send + 'static,
     {
@@ -187,10 +187,10 @@ pub mod storage_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/storage.Storage/set" => {
+                "/storage.JasmineStorage/set" => {
                     #[allow(non_camel_case_types)]
-                    struct setSvc<T: Storage>(pub Arc<T>);
-                    impl<T: Storage> tonic::server::UnaryService<super::KeyValue> for setSvc<T> {
+                    struct setSvc<T: JasmineStorage>(pub Arc<T>);
+                    impl<T: JasmineStorage> tonic::server::UnaryService<super::KeyValue> for setSvc<T> {
                         type Response = super::Bool;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(
@@ -218,10 +218,10 @@ pub mod storage_server {
                     };
                     Box::pin(fut)
                 }
-                "/storage.Storage/get" => {
+                "/storage.JasmineStorage/get" => {
                     #[allow(non_camel_case_types)]
-                    struct getSvc<T: Storage>(pub Arc<T>);
-                    impl<T: Storage> tonic::server::UnaryService<super::Key> for getSvc<T> {
+                    struct getSvc<T: JasmineStorage>(pub Arc<T>);
+                    impl<T: JasmineStorage> tonic::server::UnaryService<super::Key> for getSvc<T> {
                         type Response = super::Value;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Key>) -> Self::Future {
@@ -246,10 +246,10 @@ pub mod storage_server {
                     };
                     Box::pin(fut)
                 }
-                "/storage.Storage/ping" => {
+                "/storage.JasmineStorage/ping" => {
                     #[allow(non_camel_case_types)]
-                    struct pingSvc<T: Storage>(pub Arc<T>);
-                    impl<T: Storage> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
+                    struct pingSvc<T: JasmineStorage>(pub Arc<T>);
+                    impl<T: JasmineStorage> tonic::server::UnaryService<super::Empty> for pingSvc<T> {
                         type Response = super::Empty;
                         type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
                         fn call(&mut self, request: tonic::Request<super::Empty>) -> Self::Future {
@@ -285,7 +285,7 @@ pub mod storage_server {
             }
         }
     }
-    impl<T: Storage> Clone for StorageServer<T> {
+    impl<T: JasmineStorage> Clone for JasmineStorageServer<T> {
         fn clone(&self) -> Self {
             let inner = self.inner.clone();
             Self {
@@ -295,7 +295,7 @@ pub mod storage_server {
             }
         }
     }
-    impl<T: Storage> Clone for _Inner<T> {
+    impl<T: JasmineStorage> Clone for _Inner<T> {
         fn clone(&self) -> Self {
             Self(self.0.clone())
         }
@@ -305,7 +305,7 @@ pub mod storage_server {
             write!(f, "{:?}", self.0)
         }
     }
-    impl<T: Storage> tonic::transport::NamedService for StorageServer<T> {
-        const NAME: &'static str = "storage.Storage";
+    impl<T: JasmineStorage> tonic::transport::NamedService for JasmineStorageServer<T> {
+        const NAME: &'static str = "storage.JasmineStorage";
     }
 }
