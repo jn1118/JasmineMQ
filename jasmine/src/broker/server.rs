@@ -7,9 +7,10 @@ use util::{
 
 #[async_trait]
 ///A trait representing a JasmineBroker interface.
-pub trait JasmineBroker {
-    ///An async function that takes in the topic and message and then store the messsage and publish the message to the correpsonding subcriber
-    async fn on_pub_message(&self, topic: String, message: JasmineMessage) -> JasmineResult<u64>;
+pub trait JasmineBroker: Send + Sync {
+    ///An async function that takes in the topic and message and then store the messsage and publish the message to the correpsonding subcriber.
+    ///It return the result with the size of subscriber.
+    async fn on_pub_message(&self, topic: &String, message: &JasmineMessage) -> JasmineResult<u64>;
     // async fn on_connect()
 }
 
@@ -20,8 +21,8 @@ pub struct BrokerServer {
 
 #[async_trait]
 impl JasmineBroker for BrokerServer {
-    async fn on_pub_message(&self, topic: String, message: JasmineMessage) -> JasmineResult<u64> {
-        let subscriber_set = match self.subscriber_map.get(&topic) {
+    async fn on_pub_message(&self, topic: &String, message: &JasmineMessage) -> JasmineResult<u64> {
+        let subscriber_set = match self.subscriber_map.get(topic) {
             Some(set) => set,
             None => {
                 return Ok(0);
