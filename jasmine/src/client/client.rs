@@ -1,7 +1,9 @@
 use super::{publisher::JasminePublisher, subscriber::JasmineSubscriber};
 use async_trait::async_trait;
 use std::collections::{HashMap, HashSet};
+use util::rpc::broker::jasmine_broker_client::JasmineBrokerClient;
 use util::rpc::broker::jasmine_broker_server::JasmineBrokerServer;
+use util::rpc::broker::{ConnectRequest, PublishRequest, SubscribeRequest};
 use util::rpc::client::jasmine_client_client::JasmineClientClient;
 // use tonic::Status;
 use util::{
@@ -11,13 +13,14 @@ use util::{
 };
 
 ///A trait representing a JasmineClient interface. The trait bounds for JasminePublisher and JasmineSubscriber respectively.
+#[async_trait]
 pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
     ///A function creates and returns the object
     fn new(&self, broker: Vec<String>) -> JasmineResult<Box<Self>>;
     ///A function connects the client
-    fn connect(&self) -> JasmineResult<()>;
+    async fn connect(&self) -> JasmineResult<()>;
     ///A function disconnets the client
-    fn disconnect(&self) -> JasmineResult<()>;
+    async fn disconnect(&self) -> JasmineResult<()>;
     fn on_message(&self) -> JasmineMessage;
 }
 
@@ -29,6 +32,7 @@ pub struct Client {
     pub broker_addr: Vec<String>,
 }
 
+#[async_trait]
 impl JasmineClient for Client {
     fn new(&self, broker: Vec<String>) -> JasmineResult<Box<Self>> {
         return Ok(Box::new(Client {
@@ -36,32 +40,51 @@ impl JasmineClient for Client {
         }));
     }
 
-    fn connect(&self) -> JasmineResult<()> {
-        let mut broker =
-            JasmineBrokerServer::connect(format!("http://{}", &self.broker_addr[0])).await;
-
-        // let broker = connect(self.broker_addr[0]);
-        return Ok(());
+    async fn connect(&self) -> JasmineResult<()> {
+        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        match broker {
+            Ok(mut connection) => {
+                let result = connection
+                    .hook(ConnectRequest {
+                        address: " ".to_string(),
+                    })
+                    .await;
+                match result {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(Box::new(e));
+            }
+        }
     }
-    // fn connect(&mut self, user: &str) -> JasmineResult<()> {
-    //     let client_exist = self.client_map.get(user);
-    //     let mut id = 0;
-    //     match client_exist {
-    //         Some(value) => {
-    //             id = *value;
-    //         }
-    //         None => {
-    //             self.client_map.insert(user.to_string(), self.client_id);
-    //             id = self.client_id;
-    //             self.client_id = self.client_id + 1;
-    //         }
-    //     }
-    //     // do something using id
-    //     return Ok(());
-    // }
-
-    fn disconnect(&self) -> JasmineResult<()> {
-        todo!()
+    async fn disconnect(&self) -> JasmineResult<()> {
+        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        match broker {
+            Ok(mut connection) => {
+                let result = connection
+                    .unhook(ConnectRequest {
+                        address: " ".to_string(),
+                    })
+                    .await;
+                match result {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(Box::new(e));
+            }
+        }
     }
 
     fn on_message(&self) -> JasmineMessage {
@@ -70,29 +93,82 @@ impl JasmineClient for Client {
 }
 #[async_trait]
 impl JasminePublisher for Client {
-    async fn publish(&self, topic: String, message: JasmineMessage) -> JasmineResult<()> {
-        return Ok(());
-        // self.connect(user)
-        // let a = self.publish(&topic, &message).await;
-        // match a {
-        //     Ok(_) => {
-        //         return Ok(());
-        //     }
-        //     Err(e) => {
-        //         return Err(e);
-        //     }
-        // }
+    async fn publish(&self, topic: String, message: String) -> JasmineResult<()> {
+        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        match broker {
+            Ok(mut connection) => {
+                let result = connection
+                    .publish(PublishRequest {
+                        topic: topic,
+                        message: message,
+                    })
+                    .await;
+                match result {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(Box::new(e));
+            }
+        }
     }
 }
-
+#[async_trait]
 impl JasmineSubscriber for Client {
-    fn subscribe(&self, topic: String) -> JasmineResult<()> {
+    async fn subscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
-        todo!()
+        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        match broker {
+            Ok(mut connection) => {
+                let result = connection
+                    .subscribe(SubscribeRequest {
+                        address: self.broker_addr[0].to_string(),
+                        topic: topic,
+                    })
+                    .await;
+                match result {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(Box::new(e));
+            }
+        }
     }
 
-    fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
+    async fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
-        todo!()
+        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        match broker {
+            Ok(mut connection) => {
+                let result = connection
+                    .unsubscribe(SubscribeRequest {
+                        address: self.broker_addr[0].to_string(),
+                        topic: topic,
+                    })
+                    .await;
+                match result {
+                    Ok(_) => {
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(Box::new(e));
+            }
+        }
     }
 }
