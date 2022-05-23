@@ -1,4 +1,5 @@
 */.DS
-*.DS
+*.DS_Store
 target/
 /dump.rdb
+/.vscode
