@@ -13,14 +13,24 @@ use util::rpc::broker::{
 
 use util::rpc::client::jasmine_client_client::JasmineClientClient;
 
-struct Broker {
+struct RpcProcessor {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
 }
 
+impl RpcProcessor {
+    pub fn new() -> Self {
+        return RpcProcessor {
+            subscriber_map: Arc::new(Mutex::new(HashMap::new())),
+            client_map: Arc::new(Mutex::new(HashMap::new())),
+            message_queue: Arc::new(Mutex::new(Vec::new())),
+        };
+    }
+}
+
 #[tonic::async_trait]
-impl JasmineBroker for Broker {
+impl JasmineBroker for RpcProcessor {
     async fn hook(
         &self,
         request: tonic::Request<ConnectRequest>,
@@ -30,9 +40,11 @@ impl JasmineBroker for Broker {
         match JasmineClientClient::connect(format!("http://{}", &address)).await {
             Ok(client) => {
                 (*temp_client_map).insert(address, client);
+                drop(temp_client_map);
                 return Ok(Response::new(Empty {}));
             }
             Err(error) => {
+                drop(temp_client_map);
                 return Err(Status::unknown("error"));
             }
         }
@@ -46,7 +58,7 @@ impl JasmineBroker for Broker {
         let address = request.into_inner().address;
 
         (*temp_client_map).remove(&address);
-
+        drop(temp_client_map);
         return Ok(Response::new(Empty {}));
     }
 
@@ -75,12 +87,14 @@ impl JasmineBroker for Broker {
         match (*temp_subscriber_map).get_mut(&topic) {
             Some(set) => {
                 set.insert(address);
+                drop(temp_subscriber_map);
                 return Ok(Response::new(Empty {}));
             }
             None => {
                 let mut set = HashSet::new();
                 set.insert(address);
                 (*temp_subscriber_map).insert(topic, set);
+                drop(temp_subscriber_map);
                 return Ok(Response::new(Empty {}));
             }
         }
@@ -102,6 +116,7 @@ impl JasmineBroker for Broker {
             None => {}
         }
 
+        drop(temp_subscriber_map);
         return Ok(Response::new(Empty {}));
     }
 
