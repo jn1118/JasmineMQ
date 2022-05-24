@@ -26,8 +26,6 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
 
 /// This struct includes features and functionalities of a frontend mqtt like client
 pub struct Client {
-    /// Unique client id
-    // pub client_id: u64,
     // pub client_map: HashMap<String, u64>,
     pub broker_addr: Vec<String>,
 }
