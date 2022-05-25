@@ -14,10 +14,11 @@ use util::{
     transaction::JasmineLog,
 };
 
-struct Manager {
+pub struct Manager {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub addr: String,
     // pub logs: Arc<Mutex<HashMap<String, JasmineLog>>>,
     // pub storage_addrs: Vec<String>,
     // pub storage_clients: Vec<>,
@@ -28,11 +29,13 @@ impl Manager {
         subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
         client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
         message_queue: Arc<Mutex<Vec<(String, String)>>>,
+        addr: String,
     ) -> Self {
         return Manager {
             subscriber_map: subscriber_map,
             client_map: client_map,
             message_queue: message_queue,
+            addr: addr,
         };
     }
 
@@ -57,12 +60,18 @@ impl Manager {
         };
 
         for ip in subscriber_set.iter() {
-            match (*temp_client_map).get(ip).as_deref_mut() {
+            match (*temp_client_map).get_mut(ip) {
                 Some(client) => {
-                    client.send_message(Message {
-                        topic: topic.clone(),
-                        message: message.clone(),
-                    });
+                    match client
+                        .send_message(Message {
+                            topic: topic.clone(),
+                            message: message.clone(),
+                        })
+                        .await
+                    {
+                        Ok(_) => {}
+                        Err(_) => {}
+                    }
                 }
                 None => {
                     continue;

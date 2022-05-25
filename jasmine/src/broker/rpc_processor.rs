@@ -13,18 +13,20 @@ use util::rpc::broker::{
 
 use util::rpc::client::jasmine_client_client::JasmineClientClient;
 
-struct RpcProcessor {
+pub struct RpcProcessor {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub addr: String,
 }
 
 impl RpcProcessor {
-    pub fn new() -> Self {
+    pub fn new(addr: String) -> Self {
         return RpcProcessor {
             subscriber_map: Arc::new(Mutex::new(HashMap::new())),
             client_map: Arc::new(Mutex::new(HashMap::new())),
             message_queue: Arc::new(Mutex::new(Vec::new())),
+            addr: addr,
         };
     }
 }
