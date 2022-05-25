@@ -16,7 +16,7 @@ use util::{
 #[async_trait]
 pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
     ///A function creates and returns the object
-    fn new(&self, broker: Vec<String>) -> JasmineResult<Box<Self>>;
+    fn new(broker: Vec<String>) -> Self;
     ///A function connects the client
     async fn connect(&self) -> JasmineResult<()>;
     ///A function disconnets the client
@@ -26,18 +26,16 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
 
 /// This struct includes features and functionalities of a frontend mqtt like client
 pub struct Client {
-    /// Unique client id
-    // pub client_id: u64,
     // pub client_map: HashMap<String, u64>,
     pub broker_addr: Vec<String>,
 }
 
 #[async_trait]
 impl JasmineClient for Client {
-    fn new(&self, broker: Vec<String>) -> JasmineResult<Box<Self>> {
-        return Ok(Box::new(Client {
+    fn new(broker: Vec<String>) -> Self {
+        return Client {
             broker_addr: broker,
-        }));
+        };
     }
 
     async fn connect(&self) -> JasmineResult<()> {
