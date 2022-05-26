@@ -8,15 +8,17 @@ use tonic::Response;
 use util::rpc::client::jasmine_client_server::JasmineClient;
 use util::rpc::client::jasmine_client_server::JasmineClientServer;
 use util::rpc::client::{Bool, Empty, Message};
-pub struct ClientRpcProcessor {}
+pub struct ClientRpcProcessor {
+    // address for rpc client server
+    pub addr: String,
+}
 
 // #[tonic::async_trait]
-impl ClientRpcProcessor {
-    pub fn new() -> Self {
-        let tempJasmineClient = ClientRpcProcessor {};
-        return tempJasmineClient;
-    }
-}
+// impl ClientRpcProcessor {
+//     pub fn new(addr: String) -> Self {
+//         return ClientRpcProcessor { addr };
+//     }
+// }
 #[tonic::async_trait]
 impl JasmineClient for ClientRpcProcessor {
     async fn send_message(

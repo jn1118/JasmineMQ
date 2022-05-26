@@ -16,7 +16,7 @@ use util::{
 #[async_trait]
 pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
     ///A function creates and returns the object
-    fn new(broker: Vec<String>) -> Self;
+    // fn new(broker: Vec<String>) -> Self;
     ///A function connects the client
     async fn connect(&self) -> JasmineResult<()>;
     ///A function disconnets the client
@@ -32,11 +32,11 @@ pub struct Client {
 
 #[async_trait]
 impl JasmineClient for Client {
-    fn new(broker: Vec<String>) -> Self {
-        return Client {
-            broker_addr: broker,
-        };
-    }
+    // fn new(broker: Vec<String>) -> Self {
+    //     return Client {
+    //         broker_addr: broker,
+    //     };
+    // }
 
     async fn connect(&self) -> JasmineResult<()> {
         let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;

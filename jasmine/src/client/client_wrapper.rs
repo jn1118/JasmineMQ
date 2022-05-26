@@ -17,21 +17,20 @@ use util::transaction::JasmineMessage;
 
 pub struct JasmineClientWrapper {
     pub client: Client,
-    pub broker_addr: Vec<String>,
-    pub jasmine_rpc_client: ClientRpcProcessor,
+    // pub jasmine_rpc_client: ClientRpcProcessor,
 }
 
 #[async_trait]
 impl JasmineClient for JasmineClientWrapper {
-    fn new(broker: Vec<String>) -> Self {
-        let new_client = Client::new(broker);
-        let new_rpc_client = ClientRpcProcessor::new();
-        return JasmineClientWrapper {
-            client: new_client,
-            broker_addr: broker,
-            jasmine_rpc_client: new_rpc_client,
-        };
-    }
+    // fn new(broker: Vec<String>) -> Self {
+    //     let new_client = Client::new(broker);
+    //     let new_rpc_client = ClientRpcProcessor::new();
+    //     return JasmineClientWrapper {
+    //         client: new_client,
+    //         broker_addr: broker,
+    //         jasmine_rpc_client: new_rpc_client,
+    //     };
+    // }
     async fn connect(&self) -> JasmineResult<()> {
         let result = self.client.connect().await;
         return result;
@@ -66,17 +65,17 @@ impl JasminePublisher for JasmineClientWrapper {
     }
 }
 
-// takes in a list of broker addresses and then initialize a wrapper and then start the rpc.
-async fn initialization(broker: Vec<String>) -> JasmineResult<()> {
-    let client_wrapper = JasmineClientWrapper::new(broker);
-    let addr = "127.0.0.1:7799";
-    let addr = match addr.to_socket_addrs()?.next() {
+pub async fn start_rpc_client_server(rpc_server_addr: String) -> JasmineResult<()> {
+    let new_rpc_client = ClientRpcProcessor {
+        addr: rpc_server_addr.clone(),
+    };
+    let addr = match rpc_server_addr.to_socket_addrs()?.next() {
         Some(addr) => addr,
         None => SocketAddr::from(([127, 0, 0, 1], 3000)),
     };
-    let jasmine_client_service = JasmineClientServer::new(client_wrapper.jasmine_rpc_client);
+    let jasmine_rpc_server = JasmineClientServer::new(new_rpc_client);
     Server::builder()
-        .add_service(jasmine_client_service)
+        .add_service(jasmine_rpc_server)
         .serve(addr)
         .await?;
     return Ok(());
