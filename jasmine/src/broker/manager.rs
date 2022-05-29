@@ -7,11 +7,13 @@ use std::{
 use tokio::sync::Mutex;
 use tonic::{transport::Channel, Request};
 use util::{
+    leader_util::find_leader,
+    result::JasmineResult,
     rpc::{
-        broker::jasmine_broker_client::JasmineBrokerClient,
+        broker::{jasmine_broker_client::JasmineBrokerClient, PublishRequest},
         client::{jasmine_client_client::JasmineClientClient, Message},
     },
-    transaction::JasmineLog, leader_util::find_leader,
+    transaction::JasmineLog,
 };
 
 pub struct Manager {
@@ -21,8 +23,6 @@ pub struct Manager {
     pub addrs: Vec<String>,
     pub node_id: usize,
     pub logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
-    pub commit_ptr: isize,
-    pub jid: u64,
     // pub storage_addrs: Vec<String>,
     // pub storage_clients: Vec<>,
 }
@@ -43,17 +43,15 @@ impl Manager {
             addrs: addrs,
             node_id: node_id,
             logs: logs,
-            commit_ptr: -1,
-            jid: 0,
         };
     }
 
-    pub async fn process_message_queue(&mut self) -> () {
+    pub async fn process_message_queue(&mut self) -> JasmineResult<()> {
         let mut temp_message_queue = self.message_queue.lock().await;
         let (topic, message) = match (*temp_message_queue).pop() {
             Some(message) => message,
             None => {
-                return;
+                return Ok(());
             }
         };
 
@@ -63,55 +61,79 @@ impl Manager {
         let logs = match (*temp_all_logs).get_mut(&topic) {
             Some(logs) => logs,
             None => {
-                return;
+                return Ok(());
             }
         };
+        let jid = logs.len() as u64;
         logs.push(JasmineLog {
-            jid: self.jid,
+            jid: jid,
             content: message.clone(),
             is_ready: false,
         });
 
-        // If this node is the leader, copy this log to back-up nodes
+        // If this node is the leader:
         if find_leader(&topic) == self.addrs[self.node_id] {
-            todo!();
-        }
-
-        self.jid = self.jid + 1;
-
-        let temp_subscriber_map = self.subscriber_map.lock().await;
-        let mut temp_client_map = self.client_map.lock().await;
-        let subscriber_set = match (*temp_subscriber_map).get(&topic) {
-            Some(set) => set,
-            None => {
-                return;
-            }
-        };
-
-        for ip in subscriber_set.iter() {
-            match (*temp_client_map).get_mut(ip) {
-                Some(client) => {
-                    match client
-                        .send_message(Message {
+            // Copy this log to back-up nodes.
+            for i in 0..self.addrs.len() {
+                if i != self.node_id {
+                    let mut backup =
+                        match JasmineBrokerClient::connect(format!("http://{}", &self.addrs[i]))
+                            .await
+                        {
+                            Ok(backup) => backup,
+                            Err(_) => continue,
+                        };
+                    let result = backup
+                        .publish(PublishRequest {
                             topic: topic.clone(),
                             message: message.clone(),
                         })
-                        .await
-                    {
-                        Ok(_) => {}
-                        Err(_) => {}
+                        .await;
+                    match result {
+                        Ok(_) => continue,
+                        Err(e) => {
+                            continue;
+                        }
                     }
                 }
+            }
+            // Send the message to subscribers, note that only the leader will send the message.
+            let temp_subscriber_map = self.subscriber_map.lock().await;
+            let mut temp_client_map = self.client_map.lock().await;
+            let subscriber_set = match (*temp_subscriber_map).get(&topic) {
+                Some(set) => set,
                 None => {
-                    continue;
+                    return Ok(());
                 }
             };
+
+            for ip in subscriber_set.iter() {
+                match (*temp_client_map).get_mut(ip) {
+                    Some(client) => {
+                        match client
+                            .send_message(Message {
+                                topic: topic.clone(),
+                                message: message.clone(),
+                            })
+                            .await
+                        {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        }
+                    }
+                    None => {
+                        continue;
+                    }
+                };
+            }
+
+            drop(temp_subscriber_map);
+            drop(temp_client_map);
         }
 
-        drop(temp_subscriber_map);
-        drop(temp_client_map);
+        drop(temp_all_logs);
 
-        return;
+        return Ok(());
     }
 
     pub async fn client_garbage_collect(&self) -> () {

@@ -27,7 +27,7 @@ fn start_manager(
     client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     message_queue: Arc<Mutex<Vec<(String, String)>>>,
     addrs: Vec<String>,
-    node_id: usize
+    node_id: usize,
 ) -> Manager {
     return Manager::new(
         subscriber_map.clone(),
@@ -57,7 +57,6 @@ impl Broker {
             addrs.clone(),
             node_id,
         );
-        
 
         let temp_manager_process_message_queue = Arc::new(Mutex::new(manager));
         let handle = tokio::spawn(async move {
@@ -67,7 +66,6 @@ impl Broker {
                 drop(manager);
             }
         });
-        
 
         for processor in processors {
             let temp_addr = match processor.addr.clone().to_socket_addrs() {
