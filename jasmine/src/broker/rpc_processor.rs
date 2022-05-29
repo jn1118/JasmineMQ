@@ -77,6 +77,9 @@ impl JasmineBroker for RpcProcessor {
         return Ok(Response::new(Empty {}));
     }
 
+    /// TODO: 
+    /// In the replicated architecture, the subscriber maps on different broker nodes should be consistent.
+    /// This can be done with Zookeeper.
     async fn subscribe(
         &self,
         request: tonic::Request<SubscribeRequest>,
@@ -102,6 +105,7 @@ impl JasmineBroker for RpcProcessor {
         }
     }
 
+    /// TODO: Consistency issue, see "subscribe"
     async fn unsubscribe(
         &self,
         request: tonic::Request<SubscribeRequest>,

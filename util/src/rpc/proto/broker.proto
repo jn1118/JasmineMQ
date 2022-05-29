@@ -4,7 +4,7 @@ package broker;
 
 message PublishRequest {
     string topic = 1;
-    string message = 2; 
+    string message = 2;
 }
 
 message PublishResponse {

@@ -16,7 +16,7 @@ impl Storage {
     /// Create a new storage client
     pub fn new() -> JasmineResult<Self> {
         let client = redis::Client::open("redis://127.0.0.1:6379")?;
-        let mut conn = client.get_connection()?;
+        let conn = client.get_connection()?;
 
         Ok(Storage{conn, key_id: 0})
     }
