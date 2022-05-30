@@ -9,5 +9,4 @@ mod tests {
 
 pub mod broker;
 pub mod client;
-pub mod lab;
 pub mod storage;
