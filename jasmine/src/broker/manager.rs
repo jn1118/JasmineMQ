@@ -74,6 +74,7 @@ impl Manager {
         });
 
         // If this node is the leader:
+
         if find_leader(&topic) == self.addrs[self.node_id] {
             // Copy this log to back-up nodes.
             for i in 0..self.addrs.len() {
@@ -98,8 +99,6 @@ impl Manager {
                         }
                     };
 
-                    drop(temp_backups);
-
                     let result = backup
                         .publish(PublishRequest {
                             topic: topic.clone(),
@@ -112,6 +111,7 @@ impl Manager {
                             continue;
                         }
                     }
+                    drop(temp_backups);
                 }
             }
 
@@ -124,7 +124,6 @@ impl Manager {
                     return Ok(());
                 }
             };
-
             for ip in subscriber_set.iter() {
                 match (*temp_client_map).get_mut(ip) {
                     Some(client) => {

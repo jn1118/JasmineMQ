@@ -131,8 +131,6 @@ impl JasmineBroker for RpcProcessor {
                         }
                     };
 
-                    drop(temp_backups);
-
                     let result = backup
                         .subscribe(SubscribeRequest {
                             address: address.clone(),
@@ -145,6 +143,7 @@ impl JasmineBroker for RpcProcessor {
                             continue;
                         }
                     }
+                    drop(temp_backups);
                 }
             }
         }
@@ -193,8 +192,6 @@ impl JasmineBroker for RpcProcessor {
                         }
                     };
 
-                    drop(temp_backups);
-
                     let result = backup
                         .unsubscribe(SubscribeRequest {
                             address: address.clone(),
@@ -207,6 +204,7 @@ impl JasmineBroker for RpcProcessor {
                             continue;
                         }
                     }
+                    drop(temp_backups);
                 }
             }
         }

@@ -7,10 +7,10 @@
 //     thread,
 //     time::Duration,
 // };
-
 use jasmine::client::client::Client;
 use jasmine::client::client::JasmineClient;
 use tokio::task::JoinHandle;
+use tokio::time::Duration;
 use util::{
     config::{BROKER_ADDRS, BROKER_COUNT, CLIENT_ADDRS},
     result::JasmineResult,
@@ -72,7 +72,7 @@ async fn single_machine_unit_test_connect() -> JasmineResult<()> {
     let message = "Final project done.".to_string();
     // dbg!("hihihi3");
     let sub_result = client.subscribe(topic.clone()).await?;
-    // dbg!("hihihi4");
+    dbg!("hihihi4");
     let pub_result = client.publish(topic, message).await?;
     // let disconnect = client.disconnect().await?;
     dbg!("yoyoyoyo");
