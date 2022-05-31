@@ -17,7 +17,7 @@ use util::{
 
 use super::{manager::Manager, rpc_processor::RpcProcessor};
 
-struct Broker {
+pub struct Broker {
     addrs: Vec<String>,
     managers: Vec<Manager>,
 }
@@ -41,7 +41,7 @@ fn start_rpc_processor(addr: String) -> RpcProcessor {
 }
 
 impl Broker {
-    async fn new(addrs: Vec<String>) -> JasmineResult<()> {
+    pub async fn new(addrs: Vec<String>) -> JasmineResult<()> {
         let mut managers: Vec<Manager> = Vec::new();
         let mut processors: Vec<RpcProcessor> = Vec::new();
         let temp_addrs = addrs.clone();
@@ -66,18 +66,22 @@ impl Broker {
                 }
             });
         }
-
+        dbg!("i am inside broker new method");
+        dbg!(processors.len());
         for processor in processors {
             let temp_addr = match processor.addr.clone().to_socket_addrs() {
                 Ok(mut addr) => addr.next(),
                 Err(_) => {
+                    dbg!("dddddd");
                     continue;
                 }
             };
+            dbg!("ppppppp");
             let (mut sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
             Server::builder()
                 .add_service(JasmineBrokerServer::new(processor))
                 .serve_with_shutdown(temp_addr.unwrap(), async {
+                    dbg!("0000000");
                     receiver.recv().await;
                 })
                 .await?;

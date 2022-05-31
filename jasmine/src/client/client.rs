@@ -25,9 +25,11 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
 }
 
 /// This struct includes features and functionalities of a frontend mqtt like client
+#[derive(Debug)]
 pub struct Client {
     // pub client_map: HashMap<String, u64>,
     pub broker_addr: Vec<String>,
+    pub client_addr: String,
 }
 
 #[async_trait]
@@ -44,7 +46,7 @@ impl JasmineClient for Client {
             Ok(mut connection) => {
                 let result = connection
                     .hook(ConnectRequest {
-                        address: " ".to_string(),
+                        address: self.client_addr.to_string(),
                     })
                     .await;
                 match result {
@@ -67,7 +69,7 @@ impl JasmineClient for Client {
             Ok(mut connection) => {
                 let result = connection
                     .unhook(ConnectRequest {
-                        address: " ".to_string(),
+                        address: self.client_addr.to_string(),
                     })
                     .await;
                 match result {
@@ -125,7 +127,7 @@ impl JasmineSubscriber for Client {
             Ok(mut connection) => {
                 let result = connection
                     .subscribe(SubscribeRequest {
-                        address: self.broker_addr[0].to_string(),
+                        address: self.client_addr.to_string(),
                         topic: topic,
                     })
                     .await;
@@ -151,7 +153,7 @@ impl JasmineSubscriber for Client {
             Ok(mut connection) => {
                 let result = connection
                     .unsubscribe(SubscribeRequest {
-                        address: self.broker_addr[0].to_string(),
+                        address: self.client_addr.to_string(),
                         topic: topic,
                     })
                     .await;
