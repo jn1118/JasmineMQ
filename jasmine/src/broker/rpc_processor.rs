@@ -18,7 +18,7 @@ use util::rpc::client::jasmine_client_client::JasmineClientClient;
 pub struct RpcProcessor {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-    pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
@@ -43,6 +43,7 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<ConnectRequest>,
     ) -> Result<Response<Empty>, Status> {
+        // dbg!("inside hook rpc call broker");
         let mut temp_client_map = self.client_map.lock().await;
         let address = request.into_inner().address;
         match JasmineClientClient::connect(format!("http://{}", &address)).await {
@@ -52,6 +53,7 @@ impl JasmineBroker for RpcProcessor {
                 return Ok(Response::new(Empty {}));
             }
             Err(error) => {
+                // dbg!("HOOK ERROR");
                 drop(temp_client_map);
                 return Err(Status::unknown("error"));
             }
@@ -74,11 +76,13 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<PublishRequest>,
     ) -> Result<Response<Empty>, Status> {
+        // dbg!("inside publish rpc call broker");
         let mut temp_message_queue = self.message_queue.lock().await;
         let temp_request = request.into_inner().clone();
         let topic = temp_request.topic;
         let message = temp_request.message;
-        (*temp_message_queue).push((topic, message));
+        let is_consistent = temp_request.is_consistent;
+        (*temp_message_queue).push((topic, message, is_consistent));
         drop(temp_message_queue);
         return Ok(Response::new(Empty {}));
     }
@@ -214,40 +218,5 @@ impl JasmineBroker for RpcProcessor {
 
     async fn ping(&self, request: tonic::Request<Empty>) -> Result<Response<Empty>, Status> {
         return Ok(Response::new(Empty {}));
-    }
-
-    async fn publish_persistent(
-        &self,
-        request: tonic::Request<util::rpc::broker::PublishRequest>,
-    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
-        todo!()
-    }
-
-    async fn subscribe_persistent(
-        &self,
-        request: tonic::Request<util::rpc::broker::SubscribeRequest>,
-    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
-        todo!()
-    }
-
-    async fn unsubscribe_persistent(
-        &self,
-        request: tonic::Request<util::rpc::broker::SubscribeRequest>,
-    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
-        todo!()
-    }
-
-    async fn hook_persistent(
-        &self,
-        request: tonic::Request<util::rpc::broker::ConnectRequest>,
-    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
-        todo!()
-    }
-
-    async fn unhook_persistent(
-        &self,
-        request: tonic::Request<util::rpc::broker::ConnectRequest>,
-    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
-        todo!()
     }
 }

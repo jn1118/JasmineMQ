@@ -28,7 +28,7 @@ pub struct Broker {
 fn start_manager(
     subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-    message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
     back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     addrs: Vec<String>,
     node_id: usize,

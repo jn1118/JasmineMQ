@@ -1,6 +1,8 @@
 use super::{publisher::JasminePublisher, subscriber::JasmineSubscriber};
 use async_trait::async_trait;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use util::leader_util::find_leader;
 use util::rpc::broker::jasmine_broker_client::JasmineBrokerClient;
 use util::rpc::broker::jasmine_broker_server::JasmineBrokerServer;
@@ -22,7 +24,7 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
     async fn connect(&self) -> JasmineResult<()>;
     ///A function disconnets the client
     async fn disconnect(&self) -> JasmineResult<()>;
-    fn on_message(&self) -> JasmineMessage;
+    async fn on_message(&self, topic: String, is_consistent: bool) -> Vec<String>;
 }
 
 /// This struct includes features and functionalities of a frontend mqtt like client
@@ -30,16 +32,22 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
 pub struct Client {
     pub broker_addr: Vec<String>,
     pub client_addr: String,
+    pub message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
 }
 
-// impl Client {
-//     pub fn new(broker_addr: Vec<String>) -> Self {
-//         return Client {
-//             broker_addr: broker_addr,
-//         };
-//     }
-// }
-
+impl Client {
+    pub fn new(
+        broker_addr: Vec<String>,
+        addr: String,
+        message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
+    ) -> Self {
+        return Client {
+            client_addr: addr,
+            broker_addr: broker_addr,
+            message_map: message_map,
+        };
+    }
+}
 #[async_trait]
 impl JasmineClient for Client {
     async fn connect(&self) -> JasmineResult<()> {
@@ -93,13 +101,28 @@ impl JasmineClient for Client {
         // }
     }
 
-    fn on_message(&self) -> JasmineMessage {
-        todo!()
+    async fn on_message(&self, topic: String, is_consistent: bool) -> Vec<String> {
+        let mut temp_message_map = self.message_map.lock().await;
+        let value = temp_message_map.get(&(topic, is_consistent));
+        let mut result = Vec::new();
+        dbg!("inside on_message");
+        // dbg!(temp_message_map.clone());
+        match value {
+            Some(array) => result = array.to_vec(),
+            None => result = Vec::new(),
+        }
+        drop(temp_message_map);
+        return result;
     }
 }
 #[async_trait]
 impl JasminePublisher for Client {
-    async fn publish(&self, topic: String, message: String) -> JasmineResult<()> {
+    async fn publish(
+        &self,
+        topic: String,
+        message: String,
+        is_consistent: bool,
+    ) -> JasmineResult<()> {
         let broker_addr = find_leader(&topic.clone().to_string());
         let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
         match broker {
@@ -108,6 +131,7 @@ impl JasminePublisher for Client {
                     .publish(PublishRequest {
                         topic: topic,
                         message: message,
+                        is_consistent: is_consistent,
                     })
                     .await;
                 match result {

@@ -4,6 +4,8 @@ pub struct Message {
     pub topic: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub message: ::prost::alloc::string::String,
+    #[prost(bool, tag = "4")]
+    pub is_consistent: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Bool {

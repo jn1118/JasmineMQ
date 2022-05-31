@@ -5,6 +5,7 @@ package client;
 message Message {
     string topic = 2;
     string message = 3;
+    bool is_consistent = 4;
 }
 
 message Bool {
