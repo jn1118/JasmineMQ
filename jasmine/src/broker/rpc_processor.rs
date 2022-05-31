@@ -186,4 +186,39 @@ impl JasmineBroker for RpcProcessor {
     async fn ping(&self, request: tonic::Request<Empty>) -> Result<Response<Empty>, Status> {
         return Ok(Response::new(Empty {}));
     }
+
+    async fn publish_persistent(
+        &self,
+        request: tonic::Request<util::rpc::broker::PublishRequest>,
+    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
+        todo!()
+    }
+
+    async fn subscribe_persistent(
+        &self,
+        request: tonic::Request<util::rpc::broker::SubscribeRequest>,
+    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
+        todo!()
+    }
+
+    async fn unsubscribe_persistent(
+        &self,
+        request: tonic::Request<util::rpc::broker::SubscribeRequest>,
+    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
+        todo!()
+    }
+
+    async fn hook_persistent(
+        &self,
+        request: tonic::Request<util::rpc::broker::ConnectRequest>,
+    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
+        todo!()
+    }
+
+    async fn unhook_persistent(
+        &self,
+        request: tonic::Request<util::rpc::broker::ConnectRequest>,
+    ) -> Result<tonic::Response<util::rpc::broker::Empty>, tonic::Status> {
+        todo!()
+    }
 }
