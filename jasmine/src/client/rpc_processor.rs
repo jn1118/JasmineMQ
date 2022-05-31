@@ -25,19 +25,19 @@ impl JasmineClient for ClientRpcProcessor {
         &self,
         request: tonic::Request<Message>,
     ) -> Result<tonic::Response<Bool>, tonic::Status> {
-        println!("Send message rpc call back to client");
+        dbg!("Send message rpc call back to client");
         let a = request.into_inner();
         let topic = a.topic;
         let message = a.message;
-        println!("message topic is: {:?}", topic);
-        println!("message body is: {:?}", message);
+        dbg!("message topic is: {:?}", topic);
+        dbg!("message body is: {:?}", message);
         return Ok(Response::new(Bool { value: true }));
     }
     async fn ping(
         &self,
         request: tonic::Request<Empty>,
     ) -> Result<tonic::Response<Empty>, tonic::Status> {
-        println!("ping rpc call back to client");
+        dbg!("ping rpc call back to client");
         return Ok(Response::new(Empty {}));
     }
 }

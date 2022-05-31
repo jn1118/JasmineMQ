@@ -76,6 +76,8 @@ async fn single_machine_unit_test_connect() -> JasmineResult<()> {
     let pub_result = client.publish(topic, message).await?;
     // let disconnect = client.disconnect().await?;
     dbg!("yoyoyoyo");
+
+    tokio::time::sleep(Duration::from_secs(20)).await;
     // assert_eq!((), a);
     Ok(())
 }
