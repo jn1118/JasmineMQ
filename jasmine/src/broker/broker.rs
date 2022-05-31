@@ -40,8 +40,8 @@ fn start_manager(
     );
 }
 
-fn start_rpc_processor(addr: String) -> RpcProcessor {
-    return RpcProcessor::new(addr);
+fn start_rpc_processor(addrs: Vec<String>, node_id: usize) -> RpcProcessor {
+    return RpcProcessor::new(addrs, node_id);
 }
 
 impl Broker {
@@ -49,7 +49,7 @@ impl Broker {
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
-        let processor = start_rpc_processor(addr.clone());
+        let processor = start_rpc_processor(addrs.clone(), node_id);
         let manager = start_manager(
             processor.subscriber_map.clone(),
             processor.client_map.clone(),
@@ -69,7 +69,7 @@ impl Broker {
             return true;
         });
 
-        let temp_addr = match processor.addr.clone().to_socket_addrs() {
+        let temp_addr = match addr.clone().to_socket_addrs() {
             Ok(mut addr) => addr.next(),
             Err(error) => {
                 return Err(Box::new(error));
