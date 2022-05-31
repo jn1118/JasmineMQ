@@ -45,7 +45,7 @@ fn start_rpc_processor(addr: String) -> RpcProcessor {
 }
 
 impl Broker {
-    async fn new(addrs: Vec<String>, node_id: usize) -> JasmineResult<()> {
+    pub async fn new(addrs: Vec<String>, node_id: usize) -> JasmineResult<()> {
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
