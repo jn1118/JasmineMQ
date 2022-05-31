@@ -74,6 +74,7 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<PublishRequest>,
     ) -> Result<Response<Empty>, Status> {
+
         let mut temp_message_queue = self.message_queue.lock().await;
         let temp_request = request.into_inner().clone();
         let topic = temp_request.topic;
