@@ -98,6 +98,8 @@ impl Manager {
                         }
                     };
 
+                    drop(temp_backups);
+
                     let result = backup
                         .publish(PublishRequest {
                             topic: topic.clone(),
