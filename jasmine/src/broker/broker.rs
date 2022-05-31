@@ -9,7 +9,9 @@ use tonic::transport::{Channel, Server};
 use util::{
     result::JasmineResult,
     rpc::{
-        broker::jasmine_broker_server::JasmineBrokerServer,
+        broker::{
+            jasmine_broker_client::JasmineBrokerClient, jasmine_broker_server::JasmineBrokerServer,
+        },
         client::jasmine_client_client::JasmineClientClient,
     },
 };
@@ -27,6 +29,7 @@ fn start_manager(
     subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     addrs: Vec<String>,
     node_id: usize,
 ) -> Manager {
@@ -34,14 +37,15 @@ fn start_manager(
         subscriber_map,
         client_map,
         message_queue,
+        back_ups,
         addrs,
         node_id,
         Arc::new(Mutex::new(HashMap::new())),
     );
 }
 
-fn start_rpc_processor(addr: String) -> RpcProcessor {
-    return RpcProcessor::new(addr);
+fn start_rpc_processor(addrs: Vec<String>, node_id: usize) -> RpcProcessor {
+    return RpcProcessor::new(addrs, node_id);
 }
 
 impl Broker {
@@ -49,11 +53,12 @@ impl Broker {
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
-        let processor = start_rpc_processor(addr.clone());
+        let processor = start_rpc_processor(addrs.clone(), node_id);
         let manager = start_manager(
             processor.subscriber_map.clone(),
             processor.client_map.clone(),
             processor.message_queue.clone(),
+            processor.back_ups.clone(),
             addrs.clone(),
             node_id,
         );
@@ -69,7 +74,7 @@ impl Broker {
             return true;
         });
 
-        let temp_addr = match processor.addr.clone().to_socket_addrs() {
+        let temp_addr = match addr.clone().to_socket_addrs() {
             Ok(mut addr) => addr.next(),
             Err(error) => {
                 return Err(Box::new(error));

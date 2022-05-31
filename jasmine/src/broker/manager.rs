@@ -1,11 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
-    hash::Hash,
     sync::Arc,
 };
 
 use tokio::sync::Mutex;
-use tonic::{transport::Channel, Request};
+use tonic::transport::Channel;
 use util::{
     leader_util::find_leader,
     result::JasmineResult,
@@ -20,6 +19,7 @@ pub struct Manager {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
     pub logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
@@ -32,6 +32,7 @@ impl Manager {
         subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
         client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
         message_queue: Arc<Mutex<Vec<(String, String)>>>,
+        back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
         addrs: Vec<String>,
         node_id: usize,
         logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
@@ -40,6 +41,7 @@ impl Manager {
             subscriber_map: subscriber_map,
             client_map: client_map,
             message_queue: message_queue,
+            back_ups: back_ups,
             addrs: addrs,
             node_id: node_id,
             logs: logs,
@@ -76,13 +78,28 @@ impl Manager {
             // Copy this log to back-up nodes.
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
-                    let mut backup =
-                        match JasmineBrokerClient::connect(format!("http://{}", &self.addrs[i]))
+                    let backup_addr = self.addrs[i].clone();
+                    let mut temp_backups = self.back_ups.lock().await;
+
+                    let backup = match (*temp_backups).get_mut(&backup_addr) {
+                        Some(backup) => backup,
+                        None => {
+                            let backup_client = match JasmineBrokerClient::connect(format!(
+                                "http://{}",
+                                &backup_addr
+                            ))
                             .await
-                        {
-                            Ok(backup) => backup,
-                            Err(_) => continue,
-                        };
+                            {
+                                Ok(backup) => backup,
+                                Err(_) => continue,
+                            };
+                            (*temp_backups).insert(backup_addr.clone(), backup_client);
+                            (*temp_backups).get_mut(&backup_addr).unwrap()
+                        }
+                    };
+
+                    drop(temp_backups);
+
                     let result = backup
                         .publish(PublishRequest {
                             topic: topic.clone(),
@@ -97,6 +114,7 @@ impl Manager {
                     }
                 }
             }
+
             // Send the message to subscribers, note that only the leader will send the message.
             let temp_subscriber_map = self.subscriber_map.lock().await;
             let mut temp_client_map = self.client_map.lock().await;

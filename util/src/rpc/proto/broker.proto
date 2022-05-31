@@ -37,4 +37,11 @@ service JasmineBroker {
     rpc hook (ConnectRequest) returns (Empty);
     rpc unhook (ConnectRequest) returns (Empty);
     rpc ping(Empty) returns (Empty);
+
+    rpc publish_persistent(PublishRequest) returns (Empty);
+    rpc subscribe_persistent (SubscribeRequest) returns (Empty);
+    rpc unsubscribe_persistent (SubscribeRequest) returns (Empty);
+    rpc hook_persistent (ConnectRequest) returns (Empty);
+    rpc unhook_persistent (ConnectRequest) returns (Empty);
+    
 }
