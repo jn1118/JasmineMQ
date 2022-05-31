@@ -16,14 +16,6 @@ use util::{
     result::JasmineResult,
 };
 
-// // const CLIENT: String = "127.0.0.1:30000".to_string();
-// // let brokers = Vec::new();
-// // brokers.push("127.0.0.1:30001");
-// // let mut stack = Vec::new();
-
-// // stack.push(1);
-// // const BROKER: Vec<&str> = ["127.0.0.1:30001"];
-
 async fn setup() -> JasmineResult<(
     Box<dyn JasmineClient>,
     Vec<JoinHandle<JasmineResult<()>>>,
@@ -57,7 +49,7 @@ fn spawn_client_rpc_server(rpc_server_addr: String) -> tokio::task::JoinHandle<J
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[allow(unused_must_use)]
-async fn single_machine_unit_test_connect() -> JasmineResult<()> {
+async fn single_client_unit_test() -> JasmineResult<()> {
     // dbg!("hihihi1");
     let (client, broker_handle, rpc_client_handle) = match setup().await {
         Ok(value) => value,
@@ -65,7 +57,7 @@ async fn single_machine_unit_test_connect() -> JasmineResult<()> {
             return Err(e);
         }
     };
-    // dbg!("hihihi2");
+
     tokio::time::sleep(Duration::from_secs(5)).await;
     // let connect = client.connect().await?;
     let topic = "CSE223".to_string();
@@ -80,34 +72,34 @@ async fn single_machine_unit_test_connect() -> JasmineResult<()> {
     Ok(())
 }
 
-async fn single_machine_unit_test_disconnect() -> JasmineResult<()> {
-    let (client, broker_handle, rpc_client_handle) = setup().await?;
-    let a = client.disconnect().await?;
-    Ok(())
-    // return Ok(());
-}
+async fn multiple_client_unit_test() -> JasmineResult<()> {
+    // dbg!("hihihi1");
+    let (client, broker_handle, rpc_client_handle) = match setup().await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
 
-async fn single_machine_unit_test_publish() -> JasmineResult<()> {
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    // let connect = client.connect().await?;
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
-    let (client, broker_handle, rpc_client_handle) = setup().await?;
-    let a = client.publish(topic, message).await?;
+    // dbg!("hihihi3");
+    let sub_result = client.subscribe(topic.clone()).await?;
+    dbg!("hihihi4");
+    let pub_result = client.publish(topic, message).await?;
+    // let disconnect = client.disconnect().await?;
+    dbg!("yoyoyoyo");
+    // assert_eq!((), a);
     Ok(())
 }
 
-async fn single_machine_unit_test_subscribe() -> JasmineResult<()> {
-    let topic = "CSE223".to_string();
-    let (client, broker_handle, rpc_client_handle) = setup().await?;
-    let a = client.subscribe(topic).await?;
-    Ok(())
-}
-
-// successfully unsubscribe
-// TODO: haven't already subscribed -> return error?
-async fn single_machine_unit_test_unsubscribe() -> JasmineResult<()> {
-    let topic = "CSE223".to_string();
-    let (client, broker_handle, rpc_client_handle) = setup().await?;
-    let a = client.subscribe(topic.clone()).await?;
-    let b = client.unsubscribe(topic).await?;
-    Ok(())
+fn generate_client_address(num: usize) -> Vec<String> {
+    let mut address = Vec::new();
+    for i in 30000..(30000 + num) {
+        let addr = "127.0.0.1:".to_string() + &i.to_string();
+        address.push(addr)
+    }
+    return address;
 }
