@@ -9,7 +9,9 @@ use tonic::transport::{Channel, Server};
 use util::{
     result::JasmineResult,
     rpc::{
-        broker::jasmine_broker_server::JasmineBrokerServer,
+        broker::{
+            jasmine_broker_client::JasmineBrokerClient, jasmine_broker_server::JasmineBrokerServer,
+        },
         client::jasmine_client_client::JasmineClientClient,
     },
 };
@@ -27,6 +29,7 @@ fn start_manager(
     subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     addrs: Vec<String>,
     node_id: usize,
 ) -> Manager {
@@ -34,6 +37,7 @@ fn start_manager(
         subscriber_map,
         client_map,
         message_queue,
+        back_ups,
         addrs,
         node_id,
         Arc::new(Mutex::new(HashMap::new())),
@@ -54,6 +58,7 @@ impl Broker {
             processor.subscriber_map.clone(),
             processor.client_map.clone(),
             processor.message_queue.clone(),
+            processor.back_ups.clone(),
             addrs.clone(),
             node_id,
         );

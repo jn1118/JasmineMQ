@@ -19,6 +19,7 @@ pub struct RpcProcessor {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
     pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
 }
@@ -29,6 +30,7 @@ impl RpcProcessor {
             subscriber_map: Arc::new(Mutex::new(HashMap::new())),
             client_map: Arc::new(Mutex::new(HashMap::new())),
             message_queue: Arc::new(Mutex::new(Vec::new())),
+            back_ups: Arc::new(Mutex::new(HashMap::new())),
             addrs: addrs,
             node_id: node_id,
         };
@@ -109,13 +111,25 @@ impl JasmineBroker for RpcProcessor {
         if find_leader(&topic) == self.addrs[self.node_id] {
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
-                    let mut backup =
-                        match JasmineBrokerClient::connect(format!("http://{}", &self.addrs[i]))
+                    let backup_addr = self.addrs[i].clone();
+                    let mut temp_backups = self.back_ups.lock().await;
+
+                    let backup = match (*temp_backups).get_mut(&backup_addr) {
+                        Some(backup) => backup,
+                        None => {
+                            let backup_client = match JasmineBrokerClient::connect(format!(
+                                "http://{}",
+                                &backup_addr
+                            ))
                             .await
-                        {
-                            Ok(backup) => backup,
-                            Err(_) => continue,
-                        };
+                            {
+                                Ok(backup) => backup,
+                                Err(_) => continue,
+                            };
+                            (*temp_backups).insert(backup_addr.clone(), backup_client);
+                            (*temp_backups).get_mut(&backup_addr).unwrap()
+                        }
+                    };
                     let result = backup
                         .subscribe(SubscribeRequest {
                             address: address.clone(),
@@ -178,7 +192,6 @@ impl JasmineBroker for RpcProcessor {
                 }
             }
         }
-
 
         return Ok(Response::new(Empty {}));
     }
