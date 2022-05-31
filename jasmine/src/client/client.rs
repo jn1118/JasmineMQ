@@ -1,6 +1,7 @@
 use super::{publisher::JasminePublisher, subscriber::JasmineSubscriber};
 use async_trait::async_trait;
 use std::collections::{HashMap, HashSet};
+use util::leader_util::find_leader;
 use util::rpc::broker::jasmine_broker_client::JasmineBrokerClient;
 use util::rpc::broker::jasmine_broker_server::JasmineBrokerServer;
 use util::rpc::broker::{ConnectRequest, PublishRequest, SubscribeRequest};
@@ -42,50 +43,54 @@ pub struct Client {
 #[async_trait]
 impl JasmineClient for Client {
     async fn connect(&self) -> JasmineResult<()> {
-        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
-        match broker {
-            Ok(mut connection) => {
-                let result = connection
-                    .hook(ConnectRequest {
-                        address: self.client_addr.to_string(),
-                    })
-                    .await;
-                match result {
-                    Ok(_) => {
-                        return Ok(());
-                    }
-                    Err(e) => {
-                        return Err(Box::new(e));
-                    }
-                }
-            }
-            Err(e) => {
-                return Err(Box::new(e));
-            }
-        }
+        todo!();
+        // let broker_addr = find_leader(&topic.clone().to_string());
+        // let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
+        // match broker {
+        //     Ok(mut connection) => {
+        //         let result = connection
+        //             .hook(ConnectRequest {
+        //                 address: self.client_addr.to_string(),
+        //             })
+        //             .await;
+        //         match result {
+        //             Ok(_) => {
+        //                 return Ok(());
+        //             }
+        //             Err(e) => {
+        //                 return Err(Box::new(e));
+        //             }
+        //         }
+        //     }
+        //     Err(e) => {
+        //         return Err(Box::new(e));
+        //     }
+        // }
     }
     async fn disconnect(&self) -> JasmineResult<()> {
-        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
-        match broker {
-            Ok(mut connection) => {
-                let result = connection
-                    .unhook(ConnectRequest {
-                        address: self.client_addr.to_string(),
-                    })
-                    .await;
-                match result {
-                    Ok(_) => {
-                        return Ok(());
-                    }
-                    Err(e) => {
-                        return Err(Box::new(e));
-                    }
-                }
-            }
-            Err(e) => {
-                return Err(Box::new(e));
-            }
-        }
+        todo!();
+        // let broker_addr = find_leader(&topic.clone().to_string());
+        // let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
+        // match broker {
+        //     Ok(mut connection) => {
+        //         let result = connection
+        //             .unhook(ConnectRequest {
+        //                 address: self.client_addr.to_string(),
+        //             })
+        //             .await;
+        //         match result {
+        //             Ok(_) => {
+        //                 return Ok(());
+        //             }
+        //             Err(e) => {
+        //                 return Err(Box::new(e));
+        //             }
+        //         }
+        //     }
+        //     Err(e) => {
+        //         return Err(Box::new(e));
+        //     }
+        // }
     }
 
     fn on_message(&self) -> JasmineMessage {
@@ -95,7 +100,8 @@ impl JasmineClient for Client {
 #[async_trait]
 impl JasminePublisher for Client {
     async fn publish(&self, topic: String, message: String) -> JasmineResult<()> {
-        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        let broker_addr = find_leader(&topic.clone().to_string());
+        let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
         match broker {
             Ok(mut connection) => {
                 let result = connection
@@ -123,9 +129,19 @@ impl JasminePublisher for Client {
 impl JasmineSubscriber for Client {
     async fn subscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
-        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        let broker_addr = find_leader(&topic.clone().to_string());
+        eprintln!("hahahha");
+        dbg!(broker_addr.clone());
+        let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
         match broker {
             Ok(mut connection) => {
+                dbg!("before hook");
+                let result1 = connection
+                    .hook(ConnectRequest {
+                        address: self.client_addr.to_string(),
+                    })
+                    .await?;
+                dbg!("after hook");
                 let result = connection
                     .subscribe(SubscribeRequest {
                         address: self.client_addr.to_string(),
@@ -149,7 +165,8 @@ impl JasmineSubscriber for Client {
 
     async fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
-        let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
+        let broker_addr = find_leader(&topic.clone().to_string());
+        let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
         match broker {
             Ok(mut connection) => {
                 let result = connection

@@ -1,6 +1,6 @@
-#![feature(test)]
+// #![feature(test)]
 #[allow(soft_unstable)]
-extern crate test;
+// extern crate test;
 
 // #[cfg(test)]
 // mod tests {
@@ -10,9 +10,7 @@ extern crate test;
 //         assert_eq!(result, 4);
 //     }
 // }
-
-use test::Bencher;
-
+// use test::Bencher;
 pub mod broker;
 pub mod client;
 pub mod lab;

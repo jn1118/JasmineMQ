@@ -28,14 +28,16 @@ pub async fn initialize_front_end(
         client_addr: client_address.clone(),
         broker_addr: broker.clone(),
     };
-    dbg!("01");
-    start_rpc_client_server(client_address).await?;
-    dbg!("03");
+    // dbg!("01");
+    // start_rpc_client_server(client_address).await?;
+    // dbg!("03");
     return Ok(Box::new(new_client));
 }
 
-pub async fn initialize_broker(addresses: Vec<String>) -> JasmineResult<()> {
-    Broker::new(addresses, 0).await;
+pub async fn initialize_broker(addresses: Vec<String>, node_id: usize) -> JasmineResult<()> {
+    eprintln!("in initialize broker");
+    dbg!(addresses.clone());
+    Broker::new(addresses, node_id).await;
     return Ok(());
 }
 
@@ -43,12 +45,12 @@ pub async fn start_rpc_client_server(rpc_server_addr: String) -> JasmineResult<(
     let new_rpc_client = ClientRpcProcessor {
         addr: rpc_server_addr.clone(),
     };
-    dbg!("001");
+    // dbg!("001");
     let temp_addr = match rpc_server_addr.to_socket_addrs() {
         Ok(mut addr) => addr.next(),
         Err(e) => return Err(Box::new(e)),
     };
-    dbg!("002");
+    // dbg!("002");
     let (mut sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
     Server::builder()
         .add_service(JasmineClientServer::new(new_rpc_client))
