@@ -26,18 +26,19 @@ pub trait JasmineClient: JasminePublisher + JasmineSubscriber + Send + Sync {
 
 /// This struct includes features and functionalities of a frontend mqtt like client
 pub struct Client {
-    // pub client_map: HashMap<String, u64>,
     pub broker_addr: Vec<String>,
+}
+
+impl Client {
+    pub fn new(broker_addr: Vec<String>) -> Self {
+        return Client {
+            broker_addr: broker_addr,
+        };
+    }
 }
 
 #[async_trait]
 impl JasmineClient for Client {
-    // fn new(broker: Vec<String>) -> Self {
-    //     return Client {
-    //         broker_addr: broker,
-    //     };
-    // }
-
     async fn connect(&self) -> JasmineResult<()> {
         let broker = JasmineBrokerClient::connect(format!("http://{}", &self.broker_addr[0])).await;
         match broker {
