@@ -18,7 +18,7 @@ use util::{
 pub struct Manager {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-    pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
@@ -31,7 +31,7 @@ impl Manager {
     pub fn new(
         subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
         client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-        message_queue: Arc<Mutex<Vec<(String, String)>>>,
+        message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
         back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
         addrs: Vec<String>,
         node_id: usize,
@@ -50,7 +50,7 @@ impl Manager {
 
     pub async fn process_message_queue(&mut self) -> JasmineResult<()> {
         let mut temp_message_queue = self.message_queue.lock().await;
-        let (topic, message) = match (*temp_message_queue).pop() {
+        let (topic, message, is_consistent) = match (*temp_message_queue).pop() {
             Some(message) => message,
             None => {
                 return Ok(());
@@ -60,12 +60,7 @@ impl Manager {
         drop(temp_message_queue);
 
         let mut temp_all_logs = self.logs.lock().await;
-        let logs = match (*temp_all_logs).get_mut(&topic) {
-            Some(logs) => logs,
-            None => {
-                return Ok(());
-            }
-        };
+        let logs = (*temp_all_logs).entry(topic.clone()).or_insert(Vec::new());
         let jid = logs.len() as u64;
         logs.push(JasmineLog {
             jid: jid,
@@ -76,7 +71,9 @@ impl Manager {
         // If this node is the leader:
 
         if find_leader(&topic) == self.addrs[self.node_id] {
+            dbg!(self.addrs.clone());
             // Copy this log to back-up nodes.
+
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
                     let backup_addr = self.addrs[i].clone();
@@ -99,21 +96,18 @@ impl Manager {
                         }
                     };
 
-                    let result = backup
+                    let _ = backup
                         .publish(PublishRequest {
                             topic: topic.clone(),
                             message: message.clone(),
+                            is_consistent: false,
                         })
                         .await;
-                    match result {
-                        Ok(_) => continue,
-                        Err(e) => {
-                            continue;
-                        }
-                    }
                     drop(temp_backups);
                 }
+                dbg!(i);
             }
+            dbg!("after for loop");
 
             // Send the message to subscribers, note that only the leader will send the message.
             let temp_subscriber_map = self.subscriber_map.lock().await;
@@ -124,6 +118,7 @@ impl Manager {
                     return Ok(());
                 }
             };
+            dbg!("before send");
             for ip in subscriber_set.iter() {
                 match (*temp_client_map).get_mut(ip) {
                     Some(client) => {

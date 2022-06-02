@@ -24,13 +24,7 @@ pub async fn initialize_front_end(
     broker: Vec<String>,
     client_address: String,
 ) -> JasmineResult<(Box<dyn JasmineClient>)> {
-    let new_client = Client {
-        client_addr: client_address.clone(),
-        broker_addr: broker.clone(),
-    };
-    // dbg!("01");
-    // start_rpc_client_server(client_address).await?;
-    // dbg!("03");
+    let new_client = Client::new(broker.clone(), client_address.clone());
     return Ok(Box::new(new_client));
 }
 
@@ -42,9 +36,7 @@ pub async fn initialize_broker(addresses: Vec<String>, node_id: usize) -> Jasmin
 }
 
 pub async fn start_rpc_client_server(rpc_server_addr: String) -> JasmineResult<()> {
-    let new_rpc_client = ClientRpcProcessor {
-        addr: rpc_server_addr.clone(),
-    };
+    let new_rpc_client = ClientRpcProcessor::new(rpc_server_addr.clone());
     // dbg!("001");
     let temp_addr = match rpc_server_addr.to_socket_addrs() {
         Ok(mut addr) => addr.next(),
