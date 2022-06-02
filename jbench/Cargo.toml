@@ -1,5 +1,5 @@
 [package]
-name = "jasmine"
+name = "jbench"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,19 +14,5 @@ serde = {version = "1.0.137", features = ["derive"]}
 toml = "0.5.9"
 bencher = "0.1.5"
 pub-sub = "*"
-
-[dev-dependencies]
-criterion = "0.3"
-
-[dependencies.redis]
-version = "*"
-
-[[bench]]
-name = "jasmine_benchmark"
-harness = false
-
-
-
-
-
+tsc-time = "0.1.0"
 
