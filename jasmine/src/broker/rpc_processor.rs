@@ -43,6 +43,7 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<ConnectRequest>,
     ) -> Result<Response<Empty>, Status> {
+        // dbg!("inside hook rpc call broker");
         let mut temp_client_map = self.client_map.lock().await;
         let address = request.into_inner().address;
         match JasmineClientClient::connect(format!("http://{}", &address)).await {
@@ -52,6 +53,7 @@ impl JasmineBroker for RpcProcessor {
                 return Ok(Response::new(Empty {}));
             }
             Err(error) => {
+                // dbg!("HOOK ERROR");
                 drop(temp_client_map);
                 return Err(Status::unknown("error"));
             }
@@ -74,6 +76,7 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<PublishRequest>,
     ) -> Result<Response<Empty>, Status> {
+        // dbg!("inside publish rpc call broker");
         let mut temp_message_queue = self.message_queue.lock().await;
         let temp_request = request.into_inner().clone();
         let topic = temp_request.topic;

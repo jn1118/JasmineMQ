@@ -33,10 +33,10 @@ async fn setup(
     let mut handles = vec![];
     let mut clients = vec![];
     for c_addr in client_addrs {
-        let client_rpc_handle = spawn_client_rpc_server(c_addr.to_string());
+        // dbg!(c_addr.clone());
+        let client_rpc_handle = spawn_client_rpc_server(c_addr.clone().to_string());
         let client =
-            jasmine::lab::initialize_front_end(brokers.clone(), CLIENT_ADDRS[0].to_string())
-                .await?;
+            jasmine::lab::initialize_front_end(brokers.clone(), c_addr.clone().to_string()).await?;
         handles.push(client_rpc_handle);
         clients.push(client)
     }
@@ -60,26 +60,26 @@ fn spawn_client_rpc_server(rpc_server_addr: String) -> tokio::task::JoinHandle<J
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[allow(unused_must_use)]
 async fn single_client_no_consistent() -> JasmineResult<()> {
-    // dbg!("hihihi1");
     let (client, broker_handle, rpc_client_handle) = match setup(1).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
         }
     };
-
     tokio::time::sleep(Duration::from_secs(5)).await;
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = false;
-    let sub_result = client[0].subscribe(topic.clone()).await?;
-    let pub_result = client[0]
+    client[0].subscribe(topic.clone()).await?;
+    client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
     tokio::time::sleep(Duration::from_secs(20)).await;
     let result = client[0]
         .on_message(topic.clone().to_string(), is_consistent)
         .await;
+    // dbg!("yoyoyoyoy");
+    dbg!(result.clone());
     let mut expected_result = Vec::new();
     expected_result.push(message);
     assert_eq!(expected_result, result);

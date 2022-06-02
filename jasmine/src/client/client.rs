@@ -100,10 +100,15 @@ impl JasmineClient for Client {
     async fn on_message(&self, topic: String, is_consistent: bool) -> Vec<String> {
         let mut temp_message_map = self.message_map.lock().await;
         let value = temp_message_map.get(&(topic, is_consistent));
+        let mut result = Vec::new();
+        dbg!("inside on_message");
+        dbg!(temp_message_map.clone());
         match value {
-            Some(array) => array.to_vec(),
-            None => Vec::new(),
+            Some(array) => result = array.to_vec(),
+            None => result = Vec::new(),
         }
+        drop(temp_message_map);
+        return result;
     }
 }
 #[async_trait]
