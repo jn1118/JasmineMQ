@@ -18,7 +18,7 @@ use util::{
 pub struct Manager {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
     pub client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-    pub message_queue: Arc<Mutex<Vec<(String, String)>>>,
+    pub message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
@@ -31,7 +31,7 @@ impl Manager {
     pub fn new(
         subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
         client_map: Arc<Mutex<HashMap<String, JasmineClientClient<Channel>>>>,
-        message_queue: Arc<Mutex<Vec<(String, String)>>>,
+        message_queue: Arc<Mutex<Vec<(String, String, bool)>>>,
         back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
         addrs: Vec<String>,
         node_id: usize,
@@ -50,7 +50,7 @@ impl Manager {
 
     pub async fn process_message_queue(&mut self) -> JasmineResult<()> {
         let mut temp_message_queue = self.message_queue.lock().await;
-        let (topic, message) = match (*temp_message_queue).pop() {
+        let (topic, message, is_consistent) = match (*temp_message_queue).pop() {
             Some(message) => message,
             None => {
                 return Ok(());
@@ -100,6 +100,7 @@ impl Manager {
                         .publish(PublishRequest {
                             topic: topic.clone(),
                             message: message.clone(),
+                            is_consistent: false,
                         })
                         .await;
                     drop(temp_backups);
