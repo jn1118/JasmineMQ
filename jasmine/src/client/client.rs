@@ -36,11 +36,15 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(broker_addr: Vec<String>, addr: String) -> Self {
+    pub fn new(
+        broker_addr: Vec<String>,
+        addr: String,
+        message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
+    ) -> Self {
         return Client {
             client_addr: addr,
             broker_addr: broker_addr,
-            message_map: Arc::new(Mutex::new(HashMap::new())),
+            message_map: message_map,
         };
     }
 }
@@ -102,7 +106,7 @@ impl JasmineClient for Client {
         let value = temp_message_map.get(&(topic, is_consistent));
         let mut result = Vec::new();
         dbg!("inside on_message");
-        dbg!(temp_message_map.clone());
+        // dbg!(temp_message_map.clone());
         match value {
             Some(array) => result = array.to_vec(),
             None => result = Vec::new(),

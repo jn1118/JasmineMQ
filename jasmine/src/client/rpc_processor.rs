@@ -35,9 +35,9 @@ impl JasmineClient for ClientRpcProcessor {
         let a = request.into_inner();
         let topic = a.topic;
         let message = a.message;
-        let is_consistent = false;
+        let is_consistent = a.is_consistent;
         // dbg!("message topic is: {:?}", topic.clone());
-        dbg!(message.clone());
+        // dbg!(message.clone());
 
         let mut temp_message_map = self.message_map.lock().await;
         match (*temp_message_map).get_mut(&(topic.clone(), is_consistent)) {
@@ -51,7 +51,7 @@ impl JasmineClient for ClientRpcProcessor {
                 (*temp_message_map).insert((topic, is_consistent), vec_array);
             }
         }
-        dbg!(temp_message_map.clone());
+        // dbg!(temp_message_map.clone());
         drop(temp_message_map);
         return Ok(Response::new(Bool { value: true }));
     }
