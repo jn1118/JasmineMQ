@@ -36,3 +36,5 @@
 
 // criterion_group!(benches, criterion_benchmark);
 // criterion_main!(benches);
+
+fn main() {}

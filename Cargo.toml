@@ -3,5 +3,5 @@
 members = [
     "jasmine",
     "util",
-    "jbench",
+    "mybench",
 ]
