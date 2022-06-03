@@ -1,57 +1,65 @@
-fn main() {
-    println!("Hello, world!");
-}
-
 use rskafka::{
-    client::{
-        ClientBuilder,
-        partition::Compression,
-    },
+    client::{partition::Compression, ClientBuilder},
     record::Record,
 };
-use time::OffsetDateTime;
 use std::collections::BTreeMap;
+use time::OffsetDateTime;
+use tokio;
 
-// setup client
-let connection = "164.92.70.147:9092".to_owned();
-let client = ClientBuilder::new(vec![connection]).build().await.unwrap();
+#[tokio::main]
+async fn main() {
+    test().await;
+}
 
-// create a topic
-let topic = "my_topic";
-let controller_client = client.controller_client().unwrap();
-controller_client.create_topic(
-    topic,
-    2,      // partitions
-    1,      // replication factor
-    5_000,  // timeout (ms)
-).await.unwrap();
+async fn test() {
+    println!("Running");
+    // setup client
+    let connection = "164.92.70.147:9092".to_owned();
+    let client = ClientBuilder::new(vec![connection]).build().await.unwrap();
 
-// get a partition-bound client
-let partition_client = client
-    .partition_client(
-        topic.to_owned(),
-        0,  // partition
-     )
-    .unwrap();
-
-// produce some data
-let record = Record {
-    key: None,
-    value: Some(b"hello kafka".to_vec()),
-    headers: BTreeMap::from([
-        ("foo".to_owned(), b"bar".to_vec()),
-    ]),
-    timestamp: OffsetDateTime::now_utc(),
-};
-partition_client.produce(vec![record], Compression::default()).await.unwrap();
-
-// consume data
-let (records, high_watermark) = partition_client
-    .fetch_records(
-        0,  // offset
-        1..1_000_000,  // min..max bytes
-        1_000,  // max wait time
+    // create a topic
+    println!("Creating topic");
+    let topic = "quickstart-events";
+    let controller_client = client.controller_client().await.unwrap();
+    /*     controller_client
+    .create_topic(
+        topic, 2,     // partitions
+        1,     // replication factor
+        5_000, // timeout (ms)
     )
-   .await
-   .unwrap();
+    .await
+    .unwrap(); */
 
+    // get a partition-bound client
+    let partition_client = client
+        .partition_client(
+            topic.to_owned(),
+            0, // partition
+        )
+        .await
+        .unwrap();
+
+    // produce some data
+    println!("Producing");
+    let record = Record {
+        key: None,
+        value: Some(b"hello kafka".to_vec()),
+        headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
+        timestamp: OffsetDateTime::now_utc(),
+    };
+    partition_client
+        .produce(vec![record], Compression::default())
+        .await
+        .unwrap();
+
+    // consume data
+    println!("Consuming");
+    let (records, high_watermark) = partition_client
+        .fetch_records(
+            0,            // offset
+            1..1_000_000, // min..max bytes
+            1_000,        // max wait time
+        )
+        .await
+        .unwrap();
+}
