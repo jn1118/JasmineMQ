@@ -2,6 +2,7 @@ extern crate zookeeper;
 use std::{
     collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
+    time::Duration,
 };
 use zookeeper::recipes::cache::PathChildrenCache;
 use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};

@@ -3,7 +3,6 @@
 members = [
     "jasmine",
     "util",
-    "jbench",
     "kafka",
     "zk"
 ]
