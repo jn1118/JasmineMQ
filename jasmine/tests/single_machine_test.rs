@@ -8,7 +8,6 @@
 //     time::Duration,
 // };
 use jasmine::client::client::Client;
-use jasmine::client::client::JasmineClient;
 use jasmine::client::rpc_processor::ClientRpcProcessor;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
@@ -37,7 +36,7 @@ async fn setup(
     for c_addr in client_addrs {
         let new_rpc_client = ClientRpcProcessor::new(c_addr.clone());
 
-        let client = jasmine::lab::initialize_front_end(
+        let client = jasmine::library::initialize_front_end(
             brokers.clone(),
             c_addr.clone().to_string(),
             new_rpc_client.message_map.clone(),
@@ -67,7 +66,7 @@ async fn setup(
 fn spawn_broker(brokers: Vec<String>) -> Vec<tokio::task::JoinHandle<JasmineResult<()>>> {
     let mut handles = vec![];
     for i in 0..BROKER_COUNT {
-        let l = tokio::spawn(jasmine::lab::initialize_broker(brokers.clone(), i));
+        let l = tokio::spawn(jasmine::library::initialize_broker(brokers.clone(), i));
         handles.push(l);
     }
     return handles;
@@ -77,7 +76,7 @@ fn spawn_client_rpc_server(
     rpc_server_addr: String,
     new_rpc_client: ClientRpcProcessor,
 ) -> tokio::task::JoinHandle<JasmineResult<()>> {
-    let handle = tokio::spawn(jasmine::lab::start_rpc_client_server(
+    let handle = tokio::spawn(jasmine::library::start_rpc_client_server(
         rpc_server_addr,
         new_rpc_client,
     ));

@@ -1,5 +1,3 @@
-#![feature(test)]
-#[allow(soft_unstable)]
 // extern crate test;
 
 // #[cfg(test)]
@@ -13,15 +11,13 @@
 // use test::Bencher;
 pub mod broker;
 pub mod client;
-pub mod lab;
+pub mod library;
 pub mod storage;
 
 // #[bench]
 // fn simple_connection_latency(b: &mut Bencher) {
 
 // }
-
-
 
 use pub_sub;
 
@@ -74,4 +70,3 @@ use pub_sub;
 
 // criterion_group!(benches, criterion_benchmark);
 // criterion_main!(benches);
-

@@ -1,5 +1,4 @@
 use crate::client::client::Client;
-use crate::client::client::JasmineClient as OtherClient;
 use std::collections::HashMap;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
@@ -13,15 +12,15 @@ use util::rpc::client::{Bool, Empty, Message};
 pub struct ClientRpcProcessor {
     // address for rpc client server
     pub addr: String,
-    pub message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
+    pub message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>,
 }
 
 // #[tonic::async_trait]
 impl ClientRpcProcessor {
-    pub fn new(addr: String) -> Self {
+    pub fn new(addr: String, message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>) -> Self {
         return ClientRpcProcessor {
             addr: addr,
-            message_map: Arc::new(Mutex::new(HashMap::new())),
+            message_buffer: message_buffer.clone(),
         };
     }
 }
@@ -36,23 +35,9 @@ impl JasmineClient for ClientRpcProcessor {
         let topic = a.topic;
         let message = a.message;
         let is_consistent = a.is_consistent;
-        // dbg!("message topic is: {:?}", topic.clone());
-        // dbg!(message.clone());
-
-        let mut temp_message_map = self.message_map.lock().await;
-        match (*temp_message_map).get_mut(&(topic.clone(), is_consistent)) {
-            Some(array) => {
-                array.push(message.clone());
-                // (*temp_message_map).insert(topic.clone(), array);
-            }
-            None => {
-                let mut vec_array = Vec::new();
-                vec_array.push(message.clone());
-                (*temp_message_map).insert((topic, is_consistent), vec_array);
-            }
-        }
-        // dbg!(temp_message_map.clone());
-        drop(temp_message_map);
+        let mut temp_message_buffer = self.message_buffer.lock().await;
+        (*temp_message_buffer).push((topic, message, is_consistent));
+        drop(temp_message_buffer);
         return Ok(Response::new(Bool { value: true }));
     }
     async fn ping(

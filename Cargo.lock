@@ -618,25 +618,12 @@ dependencies = [
  "criterion",
  "pub-sub",
  "redis",
+ "rskafka",
  "serde",
+ "time",
  "tokio",
  "toml",
  "tonic",
- "util",
-]
-
-[[package]]
-name = "jbench"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bencher",
- "pub-sub",
- "serde",
- "tokio",
- "toml",
- "tonic",
- "tsc-time",
  "util",
 ]
 
@@ -1555,12 +1542,6 @@ name = "try-lock"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
-
-[[package]]
-name = "tsc-time"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9934e492595df1ce3fbccf7b9c2ec30f05ed31646177e62e057a9d023d7aca2e"
 
 [[package]]
 name = "unicode-bidi"
