@@ -1951,6 +1951,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "zk"
+version = "0.1.0"
+dependencies = [
+ "zookeeper",
+]
+
+[[package]]
 name = "zookeeper"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
