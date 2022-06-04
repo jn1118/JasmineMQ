@@ -21,7 +21,8 @@ async fn test() {
     println!("Creating topic");
     let topic = "my_topic";
     let controller_client = client.controller_client().await.unwrap();
-    /*     controller_client
+    /*     
+    controller_client
     .create_topic(
         topic, 2,     // partitions
         1,     // replication factor
