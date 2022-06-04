@@ -1,15 +1,9 @@
 [package]
-name = "util"
+name = "zk"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bytes = "1.1.0"
-tonic = "0.6"
-prost = "0.9"
 zookeeper = "0.6.1"
-
-[build-dependencies]
-tonic-build = {version = "0.6", features = ["rustfmt"]}
