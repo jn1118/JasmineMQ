@@ -23,6 +23,7 @@ pub struct Broker {
     node_id: usize,
     processor: RpcProcessor,
     manager: Manager,
+    receive: Channel,
 }
 
 fn start_manager(
@@ -49,7 +50,7 @@ fn start_rpc_processor(addrs: Vec<String>, node_id: usize) -> RpcProcessor {
 }
 
 impl Broker {
-    pub async fn new(addrs: Vec<String>, node_id: usize) -> JasmineResult<()> {
+    pub async fn new(addrs: Vec<String>, node_id: usize, receiver: Channel) -> JasmineResult<()> {
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
@@ -81,7 +82,7 @@ impl Broker {
             }
         };
 
-        let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
+        // let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
         Server::builder()
             .add_service(JasmineBrokerServer::new(processor))
             .serve_with_shutdown(temp_addr.unwrap(), async {
