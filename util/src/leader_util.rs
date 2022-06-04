@@ -8,6 +8,14 @@ use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
 
 use crate::config::BROKER_ADDRS;
 
+
+struct LoggingWatcher;
+impl Watcher for LoggingWatcher {
+    fn handle(&self, e: WatchedEvent) {
+        println!("{:?}", e)
+    }
+}
+
 pub fn find_leader(topic: &str) -> String {
     let zk_urls = "164.92.70.147:2181".to_string();
     let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
