@@ -19,7 +19,7 @@ async fn test() {
 
     // create a topic
     println!("Creating topic");
-    let topic = "quickstart-events";
+    let topic = "my_topic";
     let controller_client = client.controller_client().await.unwrap();
     /*     controller_client
     .create_topic(
@@ -62,4 +62,5 @@ async fn test() {
         )
         .await
         .unwrap();
+    println!("Records: {:#?}", records);
 }
