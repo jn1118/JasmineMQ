@@ -10,10 +10,10 @@ use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
 use crate::config::BROKER_ADDRS;
 
 
-struct LoggingWatcher;
+pub struct LoggingWatcher;
 impl Watcher for LoggingWatcher {
     fn handle(&self, e: WatchedEvent) {
-        println!("{:?}", e)
+        println!("Watcher triggered: {:?}", e)
     }
 }
 
