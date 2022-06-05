@@ -8,7 +8,6 @@ use zookeeper::{WatchedEvent, Watcher, ZooKeeper};
 
 use crate::config::BROKER_ADDRS;
 
-
 pub struct LoggingWatcher;
 impl Watcher for LoggingWatcher {
     fn handle(&self, e: WatchedEvent) {
@@ -26,5 +25,6 @@ pub fn find_leader(topic: &str) -> String {
     topic.hash(&mut s);
     let hash = s.finish() as usize;
     let idx = hash % (live_children_len) as usize;
+    dbg!(idx);
     BROKER_ADDRS[idx].to_string()
 }

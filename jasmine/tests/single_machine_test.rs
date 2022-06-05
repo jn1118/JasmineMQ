@@ -10,6 +10,7 @@
 use jasmine::client::client::Client;
 use jasmine::client::rpc_processor::ClientRpcProcessor;
 use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
 use util::result::JasmineError;
@@ -21,7 +22,7 @@ use util::{
 async fn setup(
     client_num: usize,
 ) -> JasmineResult<(
-    Vec<Box<dyn JasmineClient>>,
+    Vec<Client>,
     Vec<JoinHandle<JasmineResult<()>>>,
     Vec<JoinHandle<JasmineResult<()>>>,
     Vec<Sender<()>>,
@@ -45,7 +46,7 @@ async fn setup(
         )
         .unwrap();
 
-        let client_rpc_handle = spawn_client_rpc_server(0 new_rpc_client);
+        let client_rpc_handle = spawn_client_rpc_server(c_addr.clone(), new_rpc_client);
         handles.push(client_rpc_handle);
         clients.push(client)
     }
@@ -62,9 +63,13 @@ fn spawn_broker(
     let mut handles = vec![];
     let mut brokers_shutdown = vec![];
 
-    for i in 0..BROKER_COUNT {
+    for i in 0..3 {
         let (shut_tx, shut_rx) = tokio::sync::mpsc::channel(1);
-        let l = tokio::spawn(jasmine::lab::initialize_broker(brokers.clone(), i, shut_rx));
+        let l = tokio::spawn(jasmine::library::initialize_broker(
+            brokers.clone(),
+            i,
+            shut_rx,
+        ));
         brokers_shutdown.push(shut_tx);
         handles.push(l);
     }
@@ -346,6 +351,22 @@ async fn multiple_client_unit_test() -> JasmineResult<()> {
     Ok(())
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[allow(unused_must_use)]
+async fn single_client_no_shutdown() -> JasmineResult<()> {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(3).await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    broker_shut_down[0].send(()).await;
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[allow(unused_must_use)]
 async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
     let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
         Ok(value) => value,
@@ -354,7 +375,23 @@ async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
         }
     };
     tokio::time::sleep(Duration::from_secs(5)).await;
-    backs_shutdowns[3].send(()).await;
+    let topic = "CSE223".to_string();
+    let message = "Final project done.".to_string();
+    let is_consistent = false;
+    broker_shut_down[2].send(()).await;
+    client[0].subscribe(topic.clone()).await?;
+    client[0]
+        .publish(topic.clone(), message.clone(), is_consistent)
+        .await?;
+    tokio::time::sleep(Duration::from_secs(20)).await;
+    let result = client[0]
+        .on_message(topic.clone().to_string(), is_consistent)
+        .await;
+    // dbg!("yoyoyoyoy");
+    dbg!(result.clone());
+    let mut expected_result = Vec::new();
+    expected_result.push(message);
+    assert_eq!(expected_result, result);
     Ok(())
 }
 

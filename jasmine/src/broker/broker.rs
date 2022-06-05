@@ -95,15 +95,24 @@ impl Broker {
             }
         };
 
-        // let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
         Server::builder()
             .add_service(JasmineBrokerServer::new(processor))
             .serve_with_shutdown(temp_addr.unwrap(), async {
-                shut_down_signal.recv().await;
+                match shut_down_signal {
+                    Some(mut value) => {
+                        value.recv().await;
+                    }
+
+                    None => {
+                        let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
+                        receiver.recv().await;
+                    }
+                }
             })
             .await?;
 
         handle.abort();
+
         return Ok(());
     }
 }
