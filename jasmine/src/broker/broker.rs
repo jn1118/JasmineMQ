@@ -19,7 +19,7 @@ use util::{
 };
 
 use super::{manager::Manager, rpc_processor::RpcProcessor};
-use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
+use zookeeper::{Acl, CreateMode, ZooKeeper};
 pub struct Broker {
     addrs: Vec<String>,
     node_id: usize,
@@ -83,7 +83,6 @@ impl Broker {
                 drop(manager);
             }
 
-            return true;
         });
 
         let temp_addr = match addr.clone().to_socket_addrs() {

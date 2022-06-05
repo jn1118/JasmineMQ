@@ -1,13 +1,8 @@
 #![deny(unused_mut)]
 extern crate zookeeper;
 
-use std::env;
 use std::io;
-use std::sync::mpsc;
-use std::sync::Arc;
-use std::thread;
 use std::time::Duration;
-use zookeeper::recipes::cache::PathChildrenCache;
 use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
 
 struct LoggingWatcher;

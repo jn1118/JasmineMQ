@@ -4,8 +4,7 @@ use std::{
     hash::{Hash, Hasher},
     time::Duration,
 };
-use zookeeper::recipes::cache::PathChildrenCache;
-use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
+use zookeeper::{WatchedEvent, Watcher, ZooKeeper};
 
 use crate::config::BROKER_ADDRS;
 
