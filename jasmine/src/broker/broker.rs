@@ -2,11 +2,13 @@ use std::{
     collections::{HashMap, HashSet},
     net::ToSocketAddrs,
     sync::Arc,
+    time::Duration,
 };
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tonic::transport::{Channel, Server};
 use util::{
+    leader_util::LoggingWatcher,
     result::JasmineResult,
     rpc::{
         broker::{
@@ -17,7 +19,7 @@ use util::{
 };
 
 use super::{manager::Manager, rpc_processor::RpcProcessor};
-
+use zookeeper::{Acl, CreateMode, ZooKeeper};
 pub struct Broker {
     addrs: Vec<String>,
     node_id: usize,
@@ -54,6 +56,16 @@ impl Broker {
         node_id: usize,
         shut_down_signal: Option<Receiver<()>>,
     ) -> JasmineResult<()> {
+        let zk_urls = "164.92.70.147:2181".to_string();
+        let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
+        let path = format!("{}{}", "/brokers/", node_id);
+        zk.create(
+            &path,
+            Vec::new(),
+            Acl::open_unsafe().clone(),
+            CreateMode::Ephemeral,
+        )?;
+
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
@@ -74,8 +86,6 @@ impl Broker {
                 manager.process_message_queue().await;
                 drop(manager);
             }
-
-            return true;
         });
 
         let temp_addr = match addr.clone().to_socket_addrs() {

@@ -1,5 +1,3 @@
-#![feature(test)]
-#[allow(soft_unstable)]
 // extern crate test;
 
 // #[cfg(test)]
@@ -13,7 +11,7 @@
 // use test::Bencher;
 pub mod broker;
 pub mod client;
-pub mod lab;
+pub mod library;
 pub mod storage;
 
 // #[bench]

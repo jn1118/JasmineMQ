@@ -14,9 +14,12 @@ serde = {version = "1.0.137", features = ["derive"]}
 toml = "0.5.9"
 bencher = "0.1.5"
 pub-sub = "*"
+rskafka = "0.2.0"
+time = "0.3.9"
+zookeeper = "0.6.1"
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.3.4"
 
 [dependencies.redis]
 version = "*"
