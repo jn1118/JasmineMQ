@@ -378,8 +378,11 @@ async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = false;
-    broker_shut_down[2].send(()).await;
     client[0].subscribe(topic.clone()).await?;
+    client[0]
+        .publish(topic.clone(), message.clone(), is_consistent)
+        .await?;
+    broker_shut_down[0].send(()).await;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
@@ -390,8 +393,239 @@ async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
     // dbg!("yoyoyoyoy");
     dbg!(result.clone());
     let mut expected_result = Vec::new();
-    expected_result.push(message);
+    expected_result.push(message.clone());
+    expected_result.push(message.clone());
     assert_eq!(expected_result, result);
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[allow(unused_must_use)]
+async fn single_client_consistent_shutdown() -> JasmineResult<()> {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    let topic = "CSE222".to_string();
+    let message = "Final project done.".to_string();
+    let is_consistent = true;
+    client[0].subscribe(topic.clone()).await?;
+    client[0]
+        .publish(topic.clone(), message.clone(), is_consistent)
+        .await?;
+    broker_shut_down[0].send(()).await;
+    client[0]
+        .publish(topic.clone(), message.clone(), is_consistent)
+        .await?;
+
+    tokio::time::sleep(Duration::from_secs(20)).await;
+    let result = client[0]
+        .on_message(topic.clone().to_string(), is_consistent)
+        .await;
+    // dbg!("yoyoyoyoy");
+    dbg!(result.clone());
+    let mut expected_result = Vec::new();
+    expected_result.push(message.clone());
+    expected_result.push(message.clone());
+    assert_eq!(expected_result, result);
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[allow(unused_must_use)]
+async fn single_client_both_shutdown() -> JasmineResult<()> {
+    // dbg!("hihihi1");
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(2).await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    let topics = ["1"];
+    let messages = ["a", "b", "c", "d"];
+    let is_consistent = [false, true];
+
+    client[0].subscribe(topics.clone()[0].to_string()).await?;
+    for i in 0..10 {
+        for m1 in messages {
+            client[1]
+                .publish(
+                    topics.clone()[0].to_string(),
+                    m1.to_string(),
+                    is_consistent.clone()[0],
+                )
+                .await?;
+            client[1]
+                .publish(
+                    topics.clone()[0].to_string(),
+                    m1.to_string(),
+                    is_consistent.clone()[1],
+                )
+                .await?;
+        }
+    }
+
+    broker_shut_down[1].send(()).await;
+
+    for i in 0..10 {
+        for m1 in messages {
+            client[1]
+                .publish(
+                    topics.clone()[0].to_string(),
+                    m1.to_string(),
+                    is_consistent.clone()[0],
+                )
+                .await?;
+            client[1]
+                .publish(
+                    topics.clone()[0].to_string(),
+                    m1.to_string(),
+                    is_consistent.clone()[1],
+                )
+                .await?;
+        }
+    }
+
+    tokio::time::sleep(Duration::from_secs(20)).await;
+    let result1 = client[0]
+        .on_message(topics.clone()[0].to_string(), is_consistent.clone()[0])
+        .await;
+    let result2 = client[0]
+        .on_message(topics.clone()[0].to_string(), is_consistent.clone()[1])
+        .await;
+    assert_eq!(result1, result2);
+    Ok(())
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[allow(unused_must_use)]
+async fn multiple_client_unit_test_shutdown() -> JasmineResult<()> {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(4).await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    let topics = ["1", "2", "3", "4"];
+    let messages1 = ["a", "b", "c", "d"];
+    let messages2 = ["e", "f", "g"];
+
+    let is_consistent = [false, true];
+    client[0].subscribe(topics.clone()[0].to_string()).await?;
+    client[0].subscribe(topics.clone()[1].to_string()).await?;
+    client[0].subscribe(topics.clone()[2].to_string()).await?;
+    client[1].subscribe(topics.clone()[0].to_string()).await?;
+    client[1].subscribe(topics.clone()[1].to_string()).await?;
+
+    for m1 in messages1 {
+        client[2]
+            .publish(
+                topics.clone()[0].to_string(),
+                m1.clone().to_string(),
+                is_consistent.clone()[0],
+            )
+            .await?;
+        client[2]
+            .publish(
+                topics.clone()[0].to_string(),
+                m1.clone().to_string(),
+                is_consistent.clone()[1],
+            )
+            .await?;
+        client[2]
+            .publish(
+                topics.clone()[2].to_string(),
+                m1.clone().to_string(),
+                is_consistent.clone()[1],
+            )
+            .await?;
+    }
+    broker_shut_down[1].send(()).await;
+
+    for m2 in messages2 {
+        client[3]
+            .publish(
+                topics.clone()[0].to_string(),
+                m2.to_string(),
+                is_consistent[0],
+            )
+            .await?;
+        client[3]
+            .publish(
+                topics.clone()[1].to_string(),
+                m2.to_string(),
+                is_consistent[1],
+            )
+            .await?;
+    }
+
+    tokio::time::sleep(Duration::from_secs(20)).await;
+    let a = client[0]
+        .on_message(topics.clone()[0].to_string(), is_consistent[0])
+        .await;
+    let expected_message_0_f = ["a", "b", "c", "d", "e", "f", "g"].to_vec();
+    assert_eq!(expected_message_0_f, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[0].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t = ["a", "b", "c", "d"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[1].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t = ["e", "f", "g"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[1].to_string(), is_consistent[0])
+        .await;
+    let expected_message_0_t: Vec<String> = [].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[2].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t = ["a", "b", "c", "d"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[1]
+        .on_message(topics.clone()[0].to_string(), is_consistent[0])
+        .await;
+    let expected_message_0_t = ["a", "b", "c", "d", "e", "f", "g"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[1]
+        .on_message(topics.clone()[1].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t = ["e", "f", "g"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[1].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t = ["e", "f", "g"].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[0]
+        .on_message(topics.clone()[1].to_string(), is_consistent[0])
+        .await;
+    let expected_message_0_t: Vec<String> = [].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
+    let a = client[1]
+        .on_message(topics.clone()[2].to_string(), is_consistent[1])
+        .await;
+    let expected_message_0_t: Vec<String> = [].to_vec();
+    assert_eq!(expected_message_0_t, a);
+
     Ok(())
 }
 
