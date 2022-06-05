@@ -452,7 +452,7 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
     let is_consistent = [false, true];
 
     client[0].subscribe(topics.clone()[0].to_string()).await?;
-    for i in 0..10 {
+    for i in 0..5 {
         for m1 in messages {
             client[1]
                 .publish(
@@ -471,10 +471,10 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
         }
     }
 
-    //tokio::time::sleep(Duration::from_secs(1)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
     broker_shut_down[1].send(()).await;
     //tokio::time::sleep(Duration::from_secs(5)).await;
-    for i in 0..10 {
+    for i in 0..5 {
         for m1 in messages2 {
             client[1]
                 .publish(
@@ -493,10 +493,13 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
         }
     }  
 
-    //tokio::time::sleep(Duration::from_secs(30)).await;
+    
     let result1 = client[0]
         .on_message(topics.clone()[0].to_string(), is_consistent.clone()[0])
         .await;
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+    
     let result2 = client[0]
         .on_message(topics.clone()[0].to_string(), is_consistent.clone()[1])
         .await;

@@ -168,7 +168,7 @@ impl Manager {
                             dbg!("SEND OK");
                         }
                         Err(e) => {
-                            eprintln!("SEND NOT OK");
+                            println!("SEND NOT OK");
                             dbg!("SEND NOT OK");
                             dbg!(e);
                         }
@@ -176,13 +176,31 @@ impl Manager {
                 }
                 None => {
                     match JasmineClientClient::connect(format!("http://{}", &ip)).await {
-                        Ok(client) => {
-                            (*temp_client_map).insert(ip.clone(), client);
+                        Ok(mut client) => {
+                            (*temp_client_map).insert(ip.clone(), client.clone());
+                            match client
+                                .send_message(Message {
+                                    topic: topic.clone(),
+                                    message: message.clone(),
+                                    is_consistent: is_consistent,
+                                })
+                                .await
+                            {
+                                Ok(_) => {
+                                    dbg!("SEND OK");
+                                }
+                                Err(e) => {
+                                    println!("SEND NOT OK");
+                                    dbg!("SEND NOT OK");
+                                    dbg!(e);
+                                }
+                            }
                         }
                         Err(error) => {
                             dbg!(error);
                         }
                     }
+
                     continue;
                 }
             };
