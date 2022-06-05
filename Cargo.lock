@@ -668,6 +668,7 @@ dependencies = [
  "toml",
  "tonic",
  "util",
+ "zookeeper",
 ]
 
 [[package]]
