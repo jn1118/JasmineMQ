@@ -445,7 +445,7 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
         }
     };
 
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    tokio::time::sleep(Duration::from_secs(3)).await;
     let topics = ["1"];
     let messages = ["a"];
     let messages2 = ["a2"];
@@ -471,7 +471,7 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
         }
     }
 
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
     broker_shut_down[1].send(()).await;
     //tokio::time::sleep(Duration::from_secs(5)).await;
     for i in 0..10 {
