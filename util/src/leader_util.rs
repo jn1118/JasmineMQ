@@ -25,6 +25,7 @@ pub fn find_leader(topic: &str) -> String {
     topic.hash(&mut s);
     let hash = s.finish() as usize;
     let idx = hash % (live_children_len) as usize;
-    dbg!(idx);
-    BROKER_ADDRS[idx].to_string()
+    let broker_id = children[idx].clone().parse::<usize>().unwrap_or(0);
+
+    BROKER_ADDRS[broker_id].to_string()
 }
