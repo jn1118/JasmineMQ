@@ -140,6 +140,7 @@ impl Manager {
         is_consistent: bool,
     ) -> JasmineResult<()> {
         dbg!("inside pub_message_to_subscriber");
+        dbg!(self.node_id);
         // Send the message to subscribers, note that only the leader will send the message.
         let temp_subscriber_map = self.subscriber_map.lock().await;
         let mut temp_client_map = self.client_map.lock().await;
@@ -149,7 +150,6 @@ impl Manager {
                 return Ok(());
             }
         };
-        // dbg!("before send");
         for ip in subscriber_set.iter() {
             match (*temp_client_map).get_mut(ip) {
                 Some(client) => {
@@ -168,6 +168,7 @@ impl Manager {
                     }
                 }
                 None => {
+                    dbg!("None");
                     continue;
                 }
             };
