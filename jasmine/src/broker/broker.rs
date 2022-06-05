@@ -4,7 +4,7 @@ use std::{
     sync::Arc,
     time::Duration,
 };
-
+use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tonic::transport::{Channel, Server};
 use util::{
@@ -19,7 +19,7 @@ use util::{
 };
 
 use super::{manager::Manager, rpc_processor::RpcProcessor};
-use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
+use zookeeper::{Acl, CreateMode, ZooKeeper};
 pub struct Broker {
     addrs: Vec<String>,
     node_id: usize,
@@ -51,7 +51,11 @@ fn start_rpc_processor(addrs: Vec<String>, node_id: usize) -> RpcProcessor {
 }
 
 impl Broker {
-    pub async fn new(addrs: Vec<String>, node_id: usize) -> JasmineResult<()> {
+    pub async fn new(
+        addrs: Vec<String>,
+        node_id: usize,
+        shut_down_signal: Option<Receiver<()>>,
+    ) -> JasmineResult<()> {
         let zk_urls = "164.92.70.147:2181".to_string();
         let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
         let path = format!("{}{}", "/brokers/", node_id);
@@ -82,8 +86,6 @@ impl Broker {
                 manager.process_message_queue().await;
                 drop(manager);
             }
-
-            return true;
         });
 
         let temp_addr = match addr.clone().to_socket_addrs() {
@@ -93,15 +95,24 @@ impl Broker {
             }
         };
 
-        let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
         Server::builder()
             .add_service(JasmineBrokerServer::new(processor))
             .serve_with_shutdown(temp_addr.unwrap(), async {
-                receiver.recv().await;
+                match shut_down_signal {
+                    Some(mut value) => {
+                        value.recv().await;
+                    }
+
+                    None => {
+                        let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
+                        receiver.recv().await;
+                    }
+                }
             })
             .await?;
 
         handle.abort();
+
         return Ok(());
     }
 }

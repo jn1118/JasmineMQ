@@ -20,23 +20,37 @@ use util::{
 pub struct Client {
     pub broker_addr: Vec<String>,
     pub client_addr: String,
-    pub message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>,
+    pub message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
 }
 
 impl Client {
     pub fn new(
         broker_addr: Vec<String>,
         addr: String,
-        message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>,
+        message_map: Arc<Mutex<HashMap<(String, bool), Vec<String>>>>,
     ) -> Self {
         return (Client {
             client_addr: addr,
             broker_addr: broker_addr,
-            message_buffer: message_buffer.clone(),
+            message_map: message_map.clone(),
         });
     }
 
-    async fn publish(
+    pub async fn on_message(&self, topic: String, is_consistent: bool) -> Vec<String> {
+        let mut temp_message_map = self.message_map.lock().await;
+        let value = temp_message_map.get(&(topic, is_consistent));
+        let mut result = Vec::new();
+        dbg!("inside on_message");
+        // dbg!(temp_message_map.clone());
+        match value {
+            Some(array) => result = array.to_vec(),
+            None => result = Vec::new(),
+        }
+        drop(temp_message_map);
+        return result;
+    }
+
+    pub async fn publish(
         &self,
         topic: String,
         message: String,
@@ -58,6 +72,7 @@ impl Client {
                         return Ok(());
                     }
                     Err(e) => {
+                        dbg!(&e);
                         return Err(Box::new(e));
                     }
                 }
@@ -67,7 +82,7 @@ impl Client {
             }
         }
     }
-    async fn subscribe(&self, topic: String) -> JasmineResult<()> {
+    pub async fn subscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
         let broker_addr = find_leader(&topic.clone().to_string());
         eprintln!("hahahha");
@@ -103,7 +118,7 @@ impl Client {
         }
     }
 
-    async fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
+    pub async fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
         let broker_addr = find_leader(&topic.clone().to_string());
         let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;

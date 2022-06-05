@@ -140,6 +140,7 @@ impl Manager {
         is_consistent: bool,
     ) -> JasmineResult<()> {
         dbg!("inside pub_message_to_subscriber");
+        dbg!(self.node_id);
         // Send the message to subscribers, note that only the leader will send the message.
         let temp_subscriber_map = self.subscriber_map.lock().await;
         let mut temp_client_map = self.client_map.lock().await;
@@ -149,8 +150,8 @@ impl Manager {
                 return Ok(());
             }
         };
-        // dbg!("before send");
         for ip in subscriber_set.iter() {
+            dbg!(self.node_id, ip);
             match (*temp_client_map).get_mut(ip) {
                 Some(client) => {
                     dbg!("before send");
@@ -163,11 +164,43 @@ impl Manager {
                         })
                         .await
                     {
-                        Ok(_) => {}
-                        Err(_) => {}
+                        Ok(_) => {
+                            dbg!("SEND OK");
+                        }
+                        Err(e) => {
+                            println!("SEND NOT OK");
+                            dbg!("SEND NOT OK");
+                            dbg!(e);
+                        }
                     }
                 }
                 None => {
+                    match JasmineClientClient::connect(format!("http://{}", &ip)).await {
+                        Ok(mut client) => {
+                            (*temp_client_map).insert(ip.clone(), client.clone());
+                            match client
+                                .send_message(Message {
+                                    topic: topic.clone(),
+                                    message: message.clone(),
+                                    is_consistent: is_consistent,
+                                })
+                                .await
+                            {
+                                Ok(_) => {
+                                    dbg!("SEND OK");
+                                }
+                                Err(e) => {
+                                    println!("SEND NOT OK");
+                                    dbg!("SEND NOT OK");
+                                    dbg!(e);
+                                }
+                            }
+                        }
+                        Err(error) => {
+                            dbg!(error);
+                        }
+                    }
+
                     continue;
                 }
             };

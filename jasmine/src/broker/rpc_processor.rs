@@ -107,6 +107,7 @@ impl JasmineBroker for RpcProcessor {
                 let mut set = HashSet::new();
                 set.insert(address.clone());
                 (*temp_subscriber_map).insert(topic.clone(), set);
+                dbg!(self.node_id, &address);
             }
         }
 
@@ -142,7 +143,9 @@ impl JasmineBroker for RpcProcessor {
                         })
                         .await;
                     match result {
-                        Ok(_) => continue,
+                        Ok(_) => {
+                            continue;
+                        }
                         Err(e) => {
                             continue;
                         }

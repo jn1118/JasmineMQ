@@ -4,11 +4,9 @@ use std::{
     hash::{Hash, Hasher},
     time::Duration,
 };
-use zookeeper::recipes::cache::PathChildrenCache;
-use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
+use zookeeper::{WatchedEvent, Watcher, ZooKeeper};
 
 use crate::config::BROKER_ADDRS;
-
 
 pub struct LoggingWatcher;
 impl Watcher for LoggingWatcher {
@@ -27,5 +25,7 @@ pub fn find_leader(topic: &str) -> String {
     topic.hash(&mut s);
     let hash = s.finish() as usize;
     let idx = hash % (live_children_len) as usize;
-    BROKER_ADDRS[idx].to_string()
+    let broker_id = children[idx].clone().parse::<usize>().unwrap_or(0);
+
+    BROKER_ADDRS[broker_id].to_string()
 }
