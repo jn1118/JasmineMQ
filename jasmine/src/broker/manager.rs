@@ -164,8 +164,14 @@ impl Manager {
                         })
                         .await
                     {
-                        Ok(_) => {}
-                        Err(_) => {}
+                        Ok(_) => {
+                            dbg!("SEND OK");
+                        }
+                        Err(e) => {
+                            eprintln!("SEND NOT OK");
+                            dbg!("SEND NOT OK");
+                            dbg!(e);
+                        }
                     }
                 }
                 None => {

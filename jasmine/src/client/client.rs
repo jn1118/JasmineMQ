@@ -49,7 +49,7 @@ impl Client {
         drop(temp_message_map);
         return result;
     }
-    
+
     pub async fn publish(
         &self,
         topic: String,
@@ -72,6 +72,7 @@ impl Client {
                         return Ok(());
                     }
                     Err(e) => {
+                        dbg!(&e);
                         return Err(Box::new(e));
                     }
                 }
