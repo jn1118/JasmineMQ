@@ -20,14 +20,14 @@ use util::{
     },
 };
 
-struct Library<T: Fn(String, String, bool) -> ()> {
+struct Library<T: FnMut(String, String, bool) -> ()> {
     message_callback: Arc<Mutex<Option<T>>>,
     message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>,
 }
 
 use tonic::transport::Server;
 
-impl<T: Fn(String, String, bool) -> ()> Library<T> {
+impl<T: FnMut(String, String, bool) -> ()> Library<T> {
     pub fn new() -> Self {
         let callback = Arc::new(Mutex::new(None)).clone();
         return Library {
