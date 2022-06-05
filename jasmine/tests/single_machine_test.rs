@@ -10,6 +10,7 @@
 use jasmine::client::client::Client;
 use jasmine::client::client::JasmineClient;
 use jasmine::client::rpc_processor::ClientRpcProcessor;
+use tokio::sync::mpsc::Receiver;
 use tokio::task::JoinHandle;
 use tokio::time::Duration;
 use util::result::JasmineError;
@@ -24,6 +25,7 @@ async fn setup(
     Vec<Box<dyn JasmineClient>>,
     Vec<JoinHandle<JasmineResult<()>>>,
     Vec<JoinHandle<JasmineResult<()>>>,
+    Vec<Sender<()>>,
 )> {
     let mut brokers = Vec::new();
     for i in BROKER_ADDRS {
@@ -31,7 +33,7 @@ async fn setup(
     }
 
     let client_addrs = generate_client_address(client_num);
-    let broker_handles = spawn_broker(brokers.clone());
+    let (broker_handles, broker_shutdown) = spawn_broker(brokers.clone());
     let mut handles = vec![];
     let mut clients = vec![];
     for c_addr in client_addrs {
@@ -44,33 +46,30 @@ async fn setup(
         )
         .unwrap();
 
-        let client_rpc_handle = spawn_client_rpc_server(c_addr, new_rpc_client);
-        // let temp_addr = match c_addr.to_socket_addrs() {
-        //     Ok(mut addr) => addr.next(),
-        //     Err(e) => return Err(Box::new(e)),
-        // };
-        // let (mut sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
-        // Server::builder()
-        //     .add_service(JasmineClientServer::new(new_rpc_client))
-        //     .serve_with_shutdown(temp_addr.unwrap(), async {
-        //         receiver.recv().await;
-        //     })
-        //     .await?;
-
+        let client_rpc_handle = spawn_client_rpc_server(0 new_rpc_client);
         handles.push(client_rpc_handle);
         clients.push(client)
     }
 
-    return Ok((clients, broker_handles, handles));
+    return Ok((clients, handles, broker_handles, broker_shutdown));
 }
 
-fn spawn_broker(brokers: Vec<String>) -> Vec<tokio::task::JoinHandle<JasmineResult<()>>> {
+fn spawn_broker(
+    brokers: Vec<String>,
+) -> (
+    Vec<tokio::task::JoinHandle<JasmineResult<()>>>,
+    Vec<Sender<()>>,
+) {
     let mut handles = vec![];
+    let mut brokers_shutdown = vec![];
+
     for i in 0..BROKER_COUNT {
-        let l = tokio::spawn(jasmine::lab::initialize_broker(brokers.clone(), i));
+        let (shut_tx, shut_rx) = tokio::sync::mpsc::channel(1);
+        let l = tokio::spawn(jasmine::lab::initialize_broker(brokers.clone(), i, shut_rx));
+        brokers_shutdown.push(shut_tx);
         handles.push(l);
     }
-    return handles;
+    return (handles, brokers_shutdown);
 }
 
 fn spawn_client_rpc_server(
@@ -87,7 +86,7 @@ fn spawn_client_rpc_server(
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[allow(unused_must_use)]
 async fn single_client_no_consistent() -> JasmineResult<()> {
-    let (client, broker_handle, rpc_client_handle) = match setup(1).await {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
@@ -116,7 +115,7 @@ async fn single_client_no_consistent() -> JasmineResult<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[allow(unused_must_use)]
 async fn single_client_consistent() -> JasmineResult<()> {
-    let (client, broker_handle, rpc_client_handle) = match setup(1).await {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
@@ -146,7 +145,7 @@ async fn single_client_consistent() -> JasmineResult<()> {
 #[allow(unused_must_use)]
 async fn single_client_unsubscribe() -> JasmineResult<()> {
     // dbg!("hihihi1");
-    let (client, broker_handle, rpc_client_handle) = match setup(1).await {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
@@ -179,7 +178,7 @@ async fn single_client_unsubscribe() -> JasmineResult<()> {
 #[allow(unused_must_use)]
 async fn single_client_both() -> JasmineResult<()> {
     // dbg!("hihihi1");
-    let (client, broker_handle, rpc_client_handle) = match setup(2).await {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(2).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
@@ -225,7 +224,7 @@ async fn single_client_both() -> JasmineResult<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
 #[allow(unused_must_use)]
 async fn multiple_client_unit_test() -> JasmineResult<()> {
-    let (client, broker_handle, rpc_client_handle) = match setup(4).await {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(4).await {
         Ok(value) => value,
         Err(e) => {
             return Err(e);
@@ -345,6 +344,18 @@ async fn multiple_client_unit_test() -> JasmineResult<()> {
     let expected_message_0_t: Vec<String> = [].to_vec();
     assert_eq!(expected_message_0_t, a);
 
+    Ok(())
+}
+
+async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
+    let (client, rpc_client_handle, broker_handle, broker_shut_down) = match setup(1).await {
+        Ok(value) => value,
+        Err(e) => {
+            return Err(e);
+        }
+    };
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    backs_shutdowns[3].send(()).await;
     Ok(())
 }
 

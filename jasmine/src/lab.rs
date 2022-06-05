@@ -9,6 +9,7 @@ use std::{
     net::ToSocketAddrs,
     sync::Arc,
 };
+use tokio::sync::mpsc::Receiver;
 // use crate::client::client::JasmineBroker;
 use crate::client::client::JasmineClient;
 use tokio::sync::Mutex;
@@ -31,9 +32,13 @@ pub fn initialize_front_end(
     return Ok(Box::new(new_client));
 }
 
-pub async fn initialize_broker(addresses: Vec<String>, node_id: usize) -> JasmineResult<()> {
+pub async fn initialize_broker(
+    addresses: Vec<String>,
+    node_id: usize,
+    shut_down: Receiver<()>,
+) -> JasmineResult<()> {
     eprintln!("in initialize broker");
-    Broker::new(addresses, node_id).await;
+    Broker::new(addresses, node_id, Some(shut_down)).await;
     return Ok(());
 }
 

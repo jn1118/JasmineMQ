@@ -3,7 +3,7 @@ use std::{
     net::ToSocketAddrs,
     sync::Arc,
 };
-
+use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tonic::transport::{Channel, Server};
 use util::{
@@ -49,7 +49,11 @@ fn start_rpc_processor(addrs: Vec<String>, node_id: usize) -> RpcProcessor {
 }
 
 impl Broker {
-    pub async fn new(addrs: Vec<String>, node_id: usize) -> JasmineResult<()> {
+    pub async fn new(
+        addrs: Vec<String>,
+        node_id: usize,
+        shut_down_signal: Option<Receiver<()>>,
+    ) -> JasmineResult<()> {
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
 
@@ -81,11 +85,11 @@ impl Broker {
             }
         };
 
-        let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
+        // let (sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
         Server::builder()
             .add_service(JasmineBrokerServer::new(processor))
             .serve_with_shutdown(temp_addr.unwrap(), async {
-                receiver.recv().await;
+                shut_down_signal.recv().await;
             })
             .await?;
 
