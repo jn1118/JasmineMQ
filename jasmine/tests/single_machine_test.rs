@@ -13,7 +13,7 @@ use tokio::task::JoinHandle;
 use tokio::time::Duration;
 use util::result::JasmineError;
 use util::{
-    config::{BROKER_ADDRS, BROKER_COUNT, CLIENT_ADDRS},
+    config::{BROKER_ADDRS, CLIENT_ADDRS},
     result::JasmineResult,
 };
 
