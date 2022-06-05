@@ -17,14 +17,13 @@ use util::{
 
 /// This struct includes features and functionalities of a frontend mqtt like client
 #[derive(Debug)]
-pub struct Client<T: Fn(String, String, bool) -> ()> {
+pub struct Client {
     pub broker_addr: Vec<String>,
     pub client_addr: String,
-    pub message_callback: Option<T>,
     pub message_buffer: Arc<Mutex<Vec<(String, String, bool)>>>,
 }
 
-impl<T: Fn(String, String, bool) -> ()> Client<T> {
+impl Client {
     pub fn new(
         broker_addr: Vec<String>,
         addr: String,
@@ -33,13 +32,8 @@ impl<T: Fn(String, String, bool) -> ()> Client<T> {
         return (Client {
             client_addr: addr,
             broker_addr: broker_addr,
-            message_callback: None,
             message_buffer: message_buffer.clone(),
         });
-    }
-
-    fn on_message(&mut self, func: T) {
-        self.message_callback = Some(func);
     }
 
     async fn publish(
