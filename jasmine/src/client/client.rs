@@ -49,6 +49,7 @@ impl Client {
         drop(temp_message_map);
         return result;
     }
+    
     pub async fn publish(
         &self,
         topic: String,

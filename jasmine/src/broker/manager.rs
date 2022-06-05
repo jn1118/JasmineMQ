@@ -151,6 +151,7 @@ impl Manager {
             }
         };
         for ip in subscriber_set.iter() {
+            dbg!(self.node_id, ip);
             match (*temp_client_map).get_mut(ip) {
                 Some(client) => {
                     dbg!("before send");
@@ -168,7 +169,14 @@ impl Manager {
                     }
                 }
                 None => {
-                    dbg!("None");
+                    match JasmineClientClient::connect(format!("http://{}", &ip)).await {
+                        Ok(client) => {
+                            (*temp_client_map).insert(ip.clone(), client);
+                        }
+                        Err(error) => {
+                            dbg!(error);
+                        }
+                    }
                     continue;
                 }
             };
