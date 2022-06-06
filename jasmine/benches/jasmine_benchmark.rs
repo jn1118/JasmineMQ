@@ -6,7 +6,7 @@ use rskafka::{
     },
     record::Record,
 };
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc, thread::JoinHandle};
 use time::OffsetDateTime;
 use tokio::{
     self,
@@ -107,6 +107,8 @@ async fn kafka_bulk_message_single_topic() {
 }
 
 async fn kafka_bulk_message_single_topic2() {
+    let mut handles = Vec::<JoinHandle<bool>>::new();
+
     for i in 0..100000 {
         tokio::spawn(async move {
             let publisher_client = kafka_establish_connection().await;
@@ -132,6 +134,8 @@ async fn kafka_bulk_message_single_topic2() {
                 .unwrap();
         });
     }
+
+    // TODO: add comparison, await handles.
 }
 
 fn bench0(c: &mut Criterion) {
@@ -180,7 +184,7 @@ fn bench3(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench3);
+criterion_group!(benches, bench0, bench1_1, bench1_2, bench2_1, bench2_2, bench3);
 criterion_main!(benches);
 
 fn gen_addrs(url: String, base: u64, num: u64) -> Vec<String> {
@@ -223,6 +227,8 @@ async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -
         clients.push(client);
     }
 
+    // on_message returns corresponding message in (topic, is_consistent) tuple: Vec<String>
+
     return clients;
 }
 
@@ -238,4 +244,6 @@ async fn jamines_single_message() {
     tokio::spawn(async move {
         pub_client[0].publish("testing".to_string(), "testing2".to_string(), false);
     });
+
+    // call spawn rpc process server
 }
