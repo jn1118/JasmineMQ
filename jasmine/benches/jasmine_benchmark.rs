@@ -17,7 +17,7 @@ use tokio::{
 };
 
 use jasmine::{
-    client::{client::Client, rpc_processor::ClientRpcProcessor},
+    client::{self, client::Client, rpc_processor::ClientRpcProcessor},
     library,
 };
 
@@ -147,11 +147,15 @@ fn bench0(c: &mut Criterion) {
 }
 
 fn bench1_1(c: &mut Criterion) {
-    c.bench_function("kafka single latency", |b| {
-        b.iter(|| async move {
-            kafka_single_message().await;
-        })
-    });
+    // c.bench_function("kafka single latency", |b| {
+    //     b.iter(|| async move {
+    //         kafka_single_message().await;
+    //     })
+    // });
+
+    let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
+    let connection = 
+
 }
 
 fn bench1_2(c: &mut Criterion) {
@@ -179,6 +183,8 @@ fn bench2_2(c: &mut Criterion) {
 }
 
 fn bench3(c: &mut Criterion) {
+    let rt = tokio::runtime::Builder::new_multi_thread().build().unwrap();
+    let res = rt.block_on(async move { kafka_establish_connection().await });
     c.bench_function("jasmine single message", |b| {
         b.iter(|| async move { jamines_single_message() })
     });
