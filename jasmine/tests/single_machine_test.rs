@@ -416,7 +416,8 @@ async fn single_client_consistent_shutdown() -> JasmineResult<()> {
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
-    broker_shut_down[0].send(()).await;
+    tokio::time::sleep(Duration::from_secs(6)).await;
+    broker_shut_down[2].send(()).await;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
