@@ -6,7 +6,7 @@ use rskafka::{
     },
     record::Record,
 };
-use std::{collections::BTreeMap, sync::Arc, thread::JoinHandle};
+use std::{collections::BTreeMap, str::from_utf8, sync::Arc, thread::JoinHandle};
 use time::OffsetDateTime;
 use tokio::{
     self,
@@ -29,6 +29,11 @@ async fn kafka_establish_connection() -> PartitionClient {
     controller_client.create_topic(topic, 2, 1, 5_000).await;
     let partition_client = client.partition_client(topic.to_owned(), 0).await.unwrap();
     return partition_client;
+}
+
+async fn clean_record() {
+    let client = kafka_establish_connection().await;
+    client.delete_records(10000, 1000).await;
 }
 
 async fn kafka_single_message() {
@@ -57,8 +62,8 @@ async fn kafka_single_message2() {
         let publisher_client = kafka_establish_connection().await;
         let record = Record {
             key: None,
-            value: Some(b"hello kafka".to_vec()),
-            headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
+            value: Some(b"we love zac".to_vec()),
+            headers: BTreeMap::from([("content-type".to_owned(), b"string".to_vec())]),
             timestamp: OffsetDateTime::now_utc(),
         };
         publisher_client
@@ -67,13 +72,21 @@ async fn kafka_single_message2() {
             .unwrap();
     });
 
-    tokio::spawn(async move {
+    let subscribe_handle = tokio::spawn(async move {
         let subscriber_client = kafka_establish_connection().await;
-        let (records, high_watermark) = subscriber_client
-            .fetch_records(0, 1..1_000_000, 1_000)
-            .await
-            .unwrap();
+        loop {
+            let (mut records, high_watermark) = subscriber_client
+                .fetch_records(0, 1..1_000_000, 1_000)
+                .await
+                .unwrap();
+
+            if from_utf8(records[0].record.value.as_mut().unwrap()) == Ok("we love zac") {
+                return;
+            }
+        }
     });
+
+    subscribe_handle.await;
 }
 
 async fn kafka_bulk_message_single_topic() {
@@ -147,18 +160,19 @@ fn bench0(c: &mut Criterion) {
 }
 
 fn bench1_1(c: &mut Criterion) {
-    // c.bench_function("kafka single latency", |b| {
-    //     b.iter(|| async move {
-    //         kafka_single_message().await;
-    //     })
-    // });
-
-    let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
-    let connection = 
-
+    c.bench_function("kafka single latency", |b| {
+        b.iter(|| async move {
+            kafka_single_message().await;
+        })
+    });
 }
 
 fn bench1_2(c: &mut Criterion) {
+    let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
+    runtime.block_on(async move {
+        clean_record().await;
+    });
+
     c.bench_function("kafka single latency2", |b| {
         b.iter(|| async move {
             kafka_single_message2().await;
@@ -190,7 +204,7 @@ fn bench3(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench0, bench1_1, bench1_2, bench2_1, bench2_2, bench3);
+criterion_group!(benches, bench1_2);
 criterion_main!(benches);
 
 fn gen_addrs(url: String, base: u64, num: u64) -> Vec<String> {
