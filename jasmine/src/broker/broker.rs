@@ -60,14 +60,14 @@ impl Broker {
         let zk_urls = "164.92.70.147:2181".to_string();
         let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
         let path = format!("{}{}", "/brokers/", node_id);
-
+        dbg!("1111");
         zk.create(
             &path,
             Vec::new(),
             Acl::open_unsafe().clone(),
             CreateMode::Ephemeral,
         )?;
-
+        dbg!("2222");
         zk.create(
             "/logs",
             Vec::new(),
@@ -76,7 +76,7 @@ impl Broker {
         );
 
         let path = format!("{}{}", "/logs/", node_id);
-
+        dbg!("3333");
         zk.create(
             &path,
             Vec::new(),
@@ -86,6 +86,7 @@ impl Broker {
 
         // Arc references to zookeepers
 
+        dbg!("after zoo keeper");
         let keeper_client = Arc::new(Mutex::new(zk));
 
         let keeper_client1 = keeper_client.clone();
