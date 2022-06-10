@@ -665,6 +665,8 @@ dependencies = [
  "redis",
  "rskafka",
  "serde",
+ "serde_bytes",
+ "serde_json",
  "time",
  "tokio",
  "toml",

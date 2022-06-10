@@ -116,28 +116,29 @@ fn zk_example2() {
         jid: 1,
         topic: "testing".to_string(),
         message: "gg0".to_string(),
-        is_consistent: true,
     };
 
     let t2 = util::transaction::JasmineLog {
         jid: 1,
         topic: "testing".to_string(),
         message: "gg1".to_string(),
-        is_consistent: true,
     };
 
     let t3 = util::transaction::JasmineLog {
         jid: 1,
         topic: "testing".to_string(),
         message: "gg2".to_string(),
-        is_consistent: true,
     };
 
     let s1 = serde_json::to_string(&t1).unwrap();
     let s2 = serde_json::to_string(&t2).unwrap();
     let s3 = serde_json::to_string(&t3).unwrap();
 
-    let s4 = format!("{}|{}|{}", s1, s2, s3);
+    let mut s4 = String::new();
+
+    s4 = format!("{}|{}", s4, s1);
+    s4 = format!("{}|{}", s4, s2);
+    s4 = format!("{}|{}", s4, s3);
 
     println!("list: {}", s4);
 
@@ -152,7 +153,13 @@ fn zk_example2() {
     let mut transactions: Vec<JasmineLog> = Vec::new();
 
     for string in my_string.split("|") {
-        transactions.push(serde_json::from_str(string).unwrap());
+        match serde_json::from_str(string) {
+            Ok(v) => {
+                transactions.push(v);
+            }
+            Err(_) => {}
+        }
+
         // println!("haha: {}", string);
     }
 

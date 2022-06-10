@@ -13,5 +13,14 @@ pub struct JasmineLog {
     pub jid: u64,
     pub topic: String,
     pub message: String,
-    pub is_consistent: bool,
+}
+
+impl Clone for JasmineLog {
+    fn clone(&self) -> Self {
+        Self {
+            jid: self.jid.clone(),
+            topic: self.topic.clone(),
+            message: self.message.clone(),
+        }
+    }
 }
