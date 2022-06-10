@@ -27,7 +27,7 @@ async fn kafka_establish_connection() -> PartitionClient {
     dbg!("B");
     let client = ClientBuilder::new(vec![connection]).build().await.unwrap();
     dbg!("C");
-    let topic = "benchmark";
+    let topic = "rara";
     dbg!("D");
     let controller_client = client.controller_client().await.unwrap();
     dbg!("E");

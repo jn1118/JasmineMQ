@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     net::ToSocketAddrs,
     sync::Arc,
     time::Duration,
@@ -19,7 +19,10 @@ use util::{
     transaction::JasmineLog,
 };
 
-use super::{manager::Manager, rpc_processor::RpcProcessor};
+use super::{
+    manager::{self, Manager},
+    rpc_processor::RpcProcessor,
+};
 use zookeeper::{Acl, CreateMode, ZooKeeper};
 pub struct Broker {
     addrs: Vec<String>,
@@ -35,7 +38,7 @@ fn start_manager(
     back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     addrs: Vec<String>,
     node_id: usize,
-    logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
+    logs: Arc<Mutex<HashMap<String, VecDeque<JasmineLog>>>>,
 ) -> Manager {
     return Manager::new(
         subscriber_map,
@@ -83,11 +86,38 @@ impl Broker {
         );
 
         let temp_manager = Arc::new(Mutex::new(manager));
-        let handle = tokio::spawn(async move {
+        let temp_manager1 = temp_manager.clone();
+        let temp_manager2 = temp_manager.clone();
+
+        // let logs = manager.logs.clone();
+        // let subscriber_map = manager.subscriber_map.clone();
+        // let client_map = manager.client_map.clone();
+
+        let message_handle = tokio::spawn(async move {
             loop {
-                let mut manager = temp_manager.lock().await;
+                let mut manager = temp_manager1.lock().await;
                 manager.process_message_queue().await;
                 drop(manager);
+            }
+        });
+
+        let log_handle = tokio::spawn(async move {
+            loop {
+                let mut manager = temp_manager2.lock().await;
+                let mut logs = manager.logs.lock().await;
+                let mut keys = Vec::<String>::new();
+
+                for key in (*logs).keys() {
+                    keys.push(key.clone());
+                }
+                drop(logs);
+                drop(manager);
+
+                for key in keys {
+                    let mut manager = temp_manager2.lock().await;
+                    manager.process_log(key).await;
+                    drop(manager);
+                }
             }
         });
 
@@ -114,7 +144,7 @@ impl Broker {
             })
             .await?;
 
-        handle.abort();
+        message_handle.abort();
 
         return Ok(());
     }

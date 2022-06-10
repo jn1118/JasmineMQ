@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     sync::Arc,
 };
 
@@ -22,7 +22,7 @@ pub struct Manager {
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
-    pub logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
+    pub logs: Arc<Mutex<HashMap<String, VecDeque<JasmineLog>>>>,
     // pub storage_addrs: Vec<String>,
     // pub storage_clients: Vec<>,
 }
@@ -35,7 +35,7 @@ impl Manager {
         back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
         addrs: Vec<String>,
         node_id: usize,
-        logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
+        logs: Arc<Mutex<HashMap<String, VecDeque<JasmineLog>>>>,
     ) -> Self {
         return Manager {
             subscriber_map: subscriber_map,
@@ -63,12 +63,12 @@ impl Manager {
             // If this node is the leader:
             if find_leader(&topic) == self.addrs[self.node_id] {
                 self.copy_to_backup(topic.clone(), message.clone()).await?;
-                self.pub_message_to_subscriber(
-                    topic.clone(),
-                    message.clone(),
-                    is_consistent.clone(),
-                )
-                .await?;
+                // self.pub_message_to_subscriber(
+                //     topic.clone(),
+                //     message.clone(),
+                //     is_consistent.clone(),
+                // )
+                // .await?;
             }
         } else {
             // If this node is the leader:
@@ -121,9 +121,11 @@ impl Manager {
 
     pub async fn append_log(&self, topic: String, message: String) -> JasmineResult<()> {
         let mut temp_all_logs = self.logs.lock().await;
-        let logs = (*temp_all_logs).entry(topic.clone()).or_insert(Vec::new());
+        let logs = (*temp_all_logs)
+            .entry(topic.clone())
+            .or_insert(VecDeque::new());
         let jid = logs.len() as u64;
-        logs.push(JasmineLog {
+        logs.push_back(JasmineLog {
             jid: jid,
             content: message.clone(),
             is_ready: false,
@@ -174,35 +176,32 @@ impl Manager {
                         }
                     }
                 }
-                None => {
-                    match JasmineClientClient::connect(format!("http://{}", &ip)).await {
-                        Ok(mut client) => {
-                            (*temp_client_map).insert(ip.clone(), client.clone());
-                            match client
-                                .send_message(Message {
-                                    topic: topic.clone(),
-                                    message: message.clone(),
-                                    is_consistent: is_consistent,
-                                })
-                                .await
-                            {
-                                Ok(_) => {
-                                    dbg!("SEND OK");
-                                }
-                                Err(e) => {
-                                    println!("SEND NOT OK");
-                                    dbg!("SEND NOT OK");
-                                    dbg!(e);
-                                }
+                None => match JasmineClientClient::connect(format!("http://{}", &ip)).await {
+                    Ok(mut client) => {
+                        (*temp_client_map).insert(ip.clone(), client.clone());
+                        match client
+                            .send_message(Message {
+                                topic: topic.clone(),
+                                message: message.clone(),
+                                is_consistent: is_consistent,
+                            })
+                            .await
+                        {
+                            Ok(_) => {
+                                dbg!("SEND OK");
+                            }
+                            Err(e) => {
+                                println!("SEND NOT OK");
+                                dbg!("SEND NOT OK");
+                                dbg!(e);
                             }
                         }
-                        Err(error) => {
-                            dbg!(error);
-                        }
                     }
-                }
+                    Err(error) => {
+                        dbg!(error);
+                    }
+                },
             };
-            
         }
         drop(temp_subscriber_map);
         drop(temp_client_map);
@@ -224,6 +223,27 @@ impl Manager {
     //     // };
     //     todo!()
     // }
+
+    pub async fn process_log(&mut self, topic: String) {
+        let mut temp_logs = self.logs.lock().await;
+
+        match (*temp_logs).get_mut(&topic) {
+            Some(list) => match list.get_mut(0) {
+                Some(log) => {
+                    self.pub_message_to_subscriber(topic, log.content.clone(), true)
+                        .await;
+                }
+                None => {
+                    drop(temp_logs);
+                    return;
+                }
+            },
+            None => {
+                drop(temp_logs);
+                return;
+            }
+        }
+    }
 
     pub async fn log_garbage_collect(&self) -> () {
         todo!()
