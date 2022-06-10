@@ -80,7 +80,7 @@ impl JasmineBroker for RpcProcessor {
         &self,
         request: tonic::Request<PublishRequest>,
     ) -> Result<Response<Empty>, Status> {
-        // dbg!("inside publish rpc call broker");
+        dbg!("inside publish rpc call broker");
         let mut temp_message_queue = self.message_queue.lock().await;
         let temp_request = request.into_inner().clone();
         let topic = temp_request.topic;
@@ -102,7 +102,6 @@ impl JasmineBroker for RpcProcessor {
         let temp_request = request.into_inner().clone();
         let address = temp_request.address;
         let topic = temp_request.topic;
-        let is_consistent = temp_request.is_consistent;
 
         match (*temp_subscriber_map).get_mut(&topic) {
             Some(set) => {
@@ -118,7 +117,7 @@ impl JasmineBroker for RpcProcessor {
 
         drop(temp_subscriber_map);
         // If this node is the leader, copy to back-up nodes
-        if find_leader(&topic) == self.addrs[self.node_id] && is_consistent {
+        if find_leader(&topic) == self.addrs[self.node_id] {
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
                     let backup_addr = self.addrs[i].clone();
@@ -145,7 +144,6 @@ impl JasmineBroker for RpcProcessor {
                         .subscribe(SubscribeRequest {
                             address: address.clone(),
                             topic: topic.clone(),
-                            is_consistent: is_consistent.clone(),
                         })
                         .await;
                     match result {
@@ -173,7 +171,6 @@ impl JasmineBroker for RpcProcessor {
         let temp_request = request.into_inner().clone();
         let address = temp_request.address;
         let topic = temp_request.topic;
-        let is_consistent = temp_request.is_consistent;
 
         match (*temp_subscriber_map).get_mut(&topic) {
             Some(set) => {
@@ -183,7 +180,7 @@ impl JasmineBroker for RpcProcessor {
         }
 
         drop(temp_subscriber_map);
-        if find_leader(&topic) == self.addrs[self.node_id] && is_consistent {
+        if find_leader(&topic) == self.addrs[self.node_id] {
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
                     let backup_addr = self.addrs[i].clone();
@@ -210,7 +207,6 @@ impl JasmineBroker for RpcProcessor {
                         .unsubscribe(SubscribeRequest {
                             address: address.clone(),
                             topic: topic.clone(),
-                            is_consistent: is_consistent.clone(),
                         })
                         .await;
                     match result {
@@ -231,41 +227,44 @@ impl JasmineBroker for RpcProcessor {
         return Ok(Response::new(Empty {}));
     }
 
-    async fn pull(
-        &self,
-        request: tonic::Request<PullRequest>,
-    ) -> Result<Response<PullResponse>, Status> {
-        let pull_request = request.into_inner();
-        let offset = pull_request.offset;
-        let topic = pull_request.topic;
+    //
+    // async fn pull(
+    //     &self,
+    //     request: tonic::Request<PullRequest>,
+    // ) -> Result<Response<PullResponse>, Status> {
+    //     let pull_request = request.into_inner();
+    //     let offset = pull_request.offset;
+    //     let topic = pull_request.topic;
 
-        let mut temp_all_logs = self.logs.lock().await;
-        let logs = match (*temp_all_logs).get_mut(&topic) {
-            Some(logs) => logs,
-            None => return Err(Status::unknown("No such topic")),
-        };
-        return Ok(Response::new(PullResponse {
-            topic: topic.clone(),
-            message: logs[offset as usize].content.clone(),
-            is_consistent: true,
-        }));
-    }
+    //     let mut temp_all_logs = self.logs.lock().await;
+    //     let logs = match (*temp_all_logs).get_mut(&topic) {
+    //         Some(logs) => logs,
+    //         None => return Err(Status::unknown("No such topic")),
+    //     };
+    //     drop(temp_all_logs);
+    //     return Ok(Response::new(PullResponse {
+    //         topic: topic.clone(),
+    //         message: logs[offset as usize].content.clone(),
+    //         is_consistent: true,
+    //     }));
+    // }
 
-    async fn commit(
-        &self,
-        request: tonic::Request<CommitRequest>,
-    ) -> Result<Response<Empty>, Status> {
-        let mut temp_logs = self.logs.lock().await;
+    // async fn commit(
+    //     &self,
+    //     request: tonic::Request<CommitRequest>,
+    // ) -> Result<Response<Empty>, Status> {
+    //     let mut temp_logs = self.logs.lock().await;
 
-        let topic = request.into_inner().topic;
+    //     let topic = request.into_inner().topic;
 
-        match (*temp_logs).get(&topic) {
-            Some(list) => {
-                list.pop_front();
-            }
-            None => {}
-        }
+    //     match (temp_logs).get(&topic) {
+    //         Some(list) => {
+    //             list.pop_front();
+    //         }
+    //         None => {}
+    //     }
+    //     drop(temp_logs);
 
-        return Ok(Response::new(Empty {}));
-    }
+    //     return Ok(Response::new(Empty {}));
+    // }
 }

@@ -61,6 +61,7 @@ impl Broker {
         node_id: usize,
         shut_down_signal: Option<Receiver<()>>,
     ) -> JasmineResult<()> {
+        dbg!(&addrs[node_id]);
         let zk_urls = "164.92.70.147:2181".to_string();
         let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
         let path = format!("{}{}", "/brokers/", node_id);
