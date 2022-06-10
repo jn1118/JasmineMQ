@@ -23,8 +23,6 @@ pub struct Manager {
     pub addrs: Vec<String>,
     pub node_id: usize,
     pub logs: Arc<Mutex<HashMap<String, VecDeque<JasmineLog>>>>,
-    // pub storage_addrs: Vec<String>,
-    // pub storage_clients: Vec<>,
 }
 
 impl Manager {
@@ -59,16 +57,9 @@ impl Manager {
         };
         drop(temp_message_queue);
         if is_consistent {
-            self.append_log(topic.clone(), message.clone()).await?;
             // If this node is the leader:
             if find_leader(&topic) == self.addrs[self.node_id] {
                 self.copy_to_backup(topic.clone(), message.clone()).await?;
-                // self.pub_message_to_subscriber(
-                //     topic.clone(),
-                //     message.clone(),
-                //     is_consistent.clone(),
-                // )
-                // .await?;
             }
         } else {
             // If this node is the leader:
@@ -116,22 +107,6 @@ impl Manager {
                 drop(temp_backups);
             }
         }
-        return Ok(());
-    }
-
-    pub async fn append_log(&self, topic: String, message: String) -> JasmineResult<()> {
-        let mut temp_all_logs = self.logs.lock().await;
-        let logs = (*temp_all_logs)
-            .entry(topic.clone())
-            .or_insert(VecDeque::new());
-        let jid = logs.len() as u64;
-        logs.push_back(JasmineLog {
-            jid: jid,
-            content: message.clone(),
-            is_ready: false,
-        });
-
-        drop(temp_all_logs);
         return Ok(());
     }
 
@@ -209,51 +184,6 @@ impl Manager {
     }
 
     pub async fn client_garbage_collect(&self) -> () {
-        todo!()
-    }
-
-    pub async fn subscriber_garbage_collect(&self) -> () {
-        todo!()
-    }
-
-    // pub async fn append_log(&self, jasmine_log: JasmineLog) -> () {
-    //     // let log = JasmineLog {
-    //     //     jid: 1,
-    //     //     content: todo!(),
-    //     // };
-    //     todo!()
-    // }
-
-    pub async fn process_log(&mut self, topic: String) {
-        let mut temp_logs = self.logs.lock().await;
-
-        match (*temp_logs).get_mut(&topic) {
-            Some(list) => match list.get_mut(0) {
-                Some(log) => {
-                    self.pub_message_to_subscriber(topic, log.content.clone(), true)
-                        .await;
-                }
-                None => {
-                    drop(temp_logs);
-                    return;
-                }
-            },
-            None => {
-                drop(temp_logs);
-                return;
-            }
-        }
-    }
-
-    pub async fn log_garbage_collect(&self) -> () {
-        todo!()
-    }
-
-    pub async fn check_size(&self, message: String) -> bool {
-        todo!()
-    }
-
-    pub async fn write_to_storage(&self, message: String) -> () {
         todo!()
     }
 }

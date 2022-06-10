@@ -102,26 +102,6 @@ impl Broker {
             }
         });
 
-        let log_handle = tokio::spawn(async move {
-            loop {
-                let mut manager = temp_manager2.lock().await;
-                let mut logs = manager.logs.lock().await;
-                let mut keys = Vec::<String>::new();
-
-                for key in (*logs).keys() {
-                    keys.push(key.clone());
-                }
-                drop(logs);
-                drop(manager);
-
-                for key in keys {
-                    let mut manager = temp_manager2.lock().await;
-                    manager.process_log(key).await;
-                    drop(manager);
-                }
-            }
-        });
-
         let temp_addr = match addr.clone().to_socket_addrs() {
             Ok(mut addr) => addr.next(),
             Err(error) => {
