@@ -43,7 +43,7 @@ async fn kafka_establish_connection() -> PartitionClient {
         }
     };
     dbg!("C");
-    let topic = "benchmark";
+    let topic = "rara";
     dbg!("D");
     let controller_client = client.controller_client().await.unwrap();
     dbg!("E");

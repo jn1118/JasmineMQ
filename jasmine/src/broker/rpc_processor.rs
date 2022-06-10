@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tonic::async_trait;
@@ -10,8 +10,8 @@ use util::result::{JasmineError, JasmineResult};
 use util::rpc::broker::jasmine_broker_client::JasmineBrokerClient;
 use util::rpc::broker::jasmine_broker_server::{JasmineBroker, JasmineBrokerServer};
 use util::rpc::broker::{
-    ConnectRequest, Empty, PublishRequest, PublishResponse, PullRequest, PullResponse,
-    SubscribeRequest, SubscribeResponse,
+    CommitRequest, ConnectRequest, Empty, PublishRequest, PublishResponse, PullRequest,
+    PullResponse, SubscribeRequest, SubscribeResponse,
 };
 
 use util::rpc::client::jasmine_client_client::JasmineClientClient;
@@ -24,7 +24,7 @@ pub struct RpcProcessor {
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
-    pub logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
+    pub logs: Arc<Mutex<HashMap<String, VecDeque<JasmineLog>>>>,
 }
 
 impl RpcProcessor {
@@ -102,6 +102,7 @@ impl JasmineBroker for RpcProcessor {
         let temp_request = request.into_inner().clone();
         let address = temp_request.address;
         let topic = temp_request.topic;
+        let is_consistent = temp_request.is_consistent;
 
         match (*temp_subscriber_map).get_mut(&topic) {
             Some(set) => {
@@ -117,7 +118,7 @@ impl JasmineBroker for RpcProcessor {
 
         drop(temp_subscriber_map);
         // If this node is the leader, copy to back-up nodes
-        if find_leader(&topic) == self.addrs[self.node_id] {
+        if find_leader(&topic) == self.addrs[self.node_id] && is_consistent {
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
                     let backup_addr = self.addrs[i].clone();
@@ -144,6 +145,7 @@ impl JasmineBroker for RpcProcessor {
                         .subscribe(SubscribeRequest {
                             address: address.clone(),
                             topic: topic.clone(),
+                            is_consistent: is_consistent.clone(),
                         })
                         .await;
                     match result {
@@ -171,6 +173,7 @@ impl JasmineBroker for RpcProcessor {
         let temp_request = request.into_inner().clone();
         let address = temp_request.address;
         let topic = temp_request.topic;
+        let is_consistent = temp_request.is_consistent;
 
         match (*temp_subscriber_map).get_mut(&topic) {
             Some(set) => {
@@ -180,7 +183,7 @@ impl JasmineBroker for RpcProcessor {
         }
 
         drop(temp_subscriber_map);
-        if find_leader(&topic) == self.addrs[self.node_id] {
+        if find_leader(&topic) == self.addrs[self.node_id] && is_consistent {
             for i in 0..self.addrs.len() {
                 if i != self.node_id {
                     let backup_addr = self.addrs[i].clone();
@@ -207,6 +210,7 @@ impl JasmineBroker for RpcProcessor {
                         .unsubscribe(SubscribeRequest {
                             address: address.clone(),
                             topic: topic.clone(),
+                            is_consistent: is_consistent.clone(),
                         })
                         .await;
                     match result {
@@ -240,10 +244,30 @@ impl JasmineBroker for RpcProcessor {
             Some(logs) => logs,
             None => return Err(Status::unknown("No such topic")),
         };
+        drop(temp_all_logs);
         return Ok(Response::new(PullResponse {
             topic: topic.clone(),
             message: logs[offset as usize].content.clone(),
             is_consistent: true,
         }));
+    }
+
+    async fn commit(
+        &self,
+        request: tonic::Request<CommitRequest>,
+    ) -> Result<Response<Empty>, Status> {
+        let mut temp_logs = self.logs.lock().await;
+
+        let topic = request.into_inner().topic;
+
+        match (temp_logs).get(&topic) {
+            Some(list) => {
+                list.pop_front();
+            }
+            None => {}
+        }
+        drop(temp_logs);
+
+        return Ok(Response::new(Empty {}));
     }
 }
