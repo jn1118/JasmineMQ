@@ -32,6 +32,22 @@ pub struct ConnectRequest {
     pub address: ::prost::alloc::string::String,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PullRequest {
+    #[prost(string, tag = "1")]
+    pub topic: ::prost::alloc::string::String,
+    #[prost(uint64, tag = "2")]
+    pub offset: u64,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PullResponse {
+    #[prost(string, tag = "1")]
+    pub topic: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(bool, tag = "3")]
+    pub is_consistent: bool,
+}
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Empty {}
 #[doc = r" Generated client implementations."]
 pub mod jasmine_broker_client {
@@ -177,6 +193,20 @@ pub mod jasmine_broker_client {
             let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/ping");
             self.inner.unary(request.into_request(), path, codec).await
         }
+        pub async fn pull(
+            &mut self,
+            request: impl tonic::IntoRequest<super::PullRequest>,
+        ) -> Result<tonic::Response<super::PullResponse>, tonic::Status> {
+            self.inner.ready().await.map_err(|e| {
+                tonic::Status::new(
+                    tonic::Code::Unknown,
+                    format!("Service was not ready: {}", e.into()),
+                )
+            })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static("/broker.JasmineBroker/pull");
+            self.inner.unary(request.into_request(), path, codec).await
+        }
     }
 }
 #[doc = r" Generated server implementations."]
@@ -210,6 +240,10 @@ pub mod jasmine_broker_server {
             &self,
             request: tonic::Request<super::Empty>,
         ) -> Result<tonic::Response<super::Empty>, tonic::Status>;
+        async fn pull(
+            &self,
+            request: tonic::Request<super::PullRequest>,
+        ) -> Result<tonic::Response<super::PullResponse>, tonic::Status>;
     }
     #[derive(Debug)]
     pub struct JasmineBrokerServer<T: JasmineBroker> {
@@ -423,6 +457,37 @@ pub mod jasmine_broker_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = pingSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
+                            accept_compression_encodings,
+                            send_compression_encodings,
+                        );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/broker.JasmineBroker/pull" => {
+                    #[allow(non_camel_case_types)]
+                    struct pullSvc<T: JasmineBroker>(pub Arc<T>);
+                    impl<T: JasmineBroker> tonic::server::UnaryService<super::PullRequest> for pullSvc<T> {
+                        type Response = super::PullResponse;
+                        type Future = BoxFuture<tonic::Response<Self::Response>, tonic::Status>;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::PullRequest>,
+                        ) -> Self::Future {
+                            let inner = self.0.clone();
+                            let fut = async move { (*inner).pull(request).await };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = pullSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec).apply_compression_config(
                             accept_compression_encodings,

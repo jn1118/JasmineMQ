@@ -16,6 +16,7 @@ use util::{
         },
         client::jasmine_client_client::JasmineClientClient,
     },
+    transaction::JasmineLog,
 };
 
 use super::{manager::Manager, rpc_processor::RpcProcessor};
@@ -34,6 +35,7 @@ fn start_manager(
     back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     addrs: Vec<String>,
     node_id: usize,
+    logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
 ) -> Manager {
     return Manager::new(
         subscriber_map,
@@ -42,7 +44,7 @@ fn start_manager(
         back_ups,
         addrs,
         node_id,
-        Arc::new(Mutex::new(HashMap::new())),
+        logs,
     );
 }
 
@@ -77,6 +79,7 @@ impl Broker {
             processor.back_ups.clone(),
             addrs.clone(),
             node_id,
+            processor.logs.clone(),
         );
 
         let temp_manager = Arc::new(Mutex::new(manager));

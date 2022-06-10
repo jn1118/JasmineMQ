@@ -26,6 +26,19 @@ message ConnectRequest {
     string address = 1;
 }
 
+message PullRequest {
+    string topic = 1;
+    uint64 offset = 2;
+}
+
+message PullResponse {
+    string topic = 1;
+    string message = 2;
+    bool is_consistent = 3;
+}
+
+
+
 
 message Empty {
     
@@ -38,5 +51,6 @@ service JasmineBroker {
     rpc hook (ConnectRequest) returns (Empty);
     rpc unhook (ConnectRequest) returns (Empty);
     rpc ping(Empty) returns (Empty);
+    rpc pull(PullRequest) returns (PullResponse);
     
 }

@@ -10,10 +10,12 @@ use util::result::{JasmineError, JasmineResult};
 use util::rpc::broker::jasmine_broker_client::JasmineBrokerClient;
 use util::rpc::broker::jasmine_broker_server::{JasmineBroker, JasmineBrokerServer};
 use util::rpc::broker::{
-    ConnectRequest, Empty, PublishRequest, PublishResponse, SubscribeRequest, SubscribeResponse,
+    ConnectRequest, Empty, PublishRequest, PublishResponse, PullRequest, PullResponse,
+    SubscribeRequest, SubscribeResponse,
 };
 
 use util::rpc::client::jasmine_client_client::JasmineClientClient;
+use util::transaction::JasmineLog;
 
 pub struct RpcProcessor {
     pub subscriber_map: Arc<Mutex<HashMap<String, HashSet<String>>>>,
@@ -22,6 +24,7 @@ pub struct RpcProcessor {
     pub back_ups: Arc<Mutex<HashMap<String, JasmineBrokerClient<Channel>>>>,
     pub addrs: Vec<String>,
     pub node_id: usize,
+    pub logs: Arc<Mutex<HashMap<String, Vec<JasmineLog>>>>,
 }
 
 impl RpcProcessor {
@@ -33,6 +36,7 @@ impl RpcProcessor {
             back_ups: Arc::new(Mutex::new(HashMap::new())),
             addrs: addrs,
             node_id: node_id,
+            logs: Arc::new(Mutex::new(HashMap::new())),
         };
     }
 }
@@ -221,5 +225,25 @@ impl JasmineBroker for RpcProcessor {
 
     async fn ping(&self, request: tonic::Request<Empty>) -> Result<Response<Empty>, Status> {
         return Ok(Response::new(Empty {}));
+    }
+
+    async fn pull(
+        &self,
+        request: tonic::Request<PullRequest>,
+    ) -> Result<Response<PullResponse>, Status> {
+        let pull_request = request.into_inner();
+        let offset = pull_request.offset;
+        let topic = pull_request.topic;
+
+        let mut temp_all_logs = self.logs.lock().await;
+        let logs = match (*temp_all_logs).get_mut(&topic) {
+            Some(logs) => logs,
+            None => return Err(Status::unknown("No such topic")),
+        };
+        return Ok(Response::new(PullResponse {
+            topic: topic.clone(),
+            message: logs[offset as usize].content.clone(),
+            is_consistent: true,
+        }));
     }
 }

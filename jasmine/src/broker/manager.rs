@@ -200,10 +200,9 @@ impl Manager {
                             dbg!(error);
                         }
                     }
-
-                    continue;
                 }
             };
+            
         }
         drop(temp_subscriber_map);
         drop(temp_client_map);
