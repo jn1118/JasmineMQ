@@ -100,7 +100,7 @@ async fn single_client_no_consistent() -> JasmineResult<()> {
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = false;
-    client[0].subscribe(topic.clone()).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
@@ -129,7 +129,7 @@ async fn single_client_consistent() -> JasmineResult<()> {
     let topic = "CSE222".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = true;
-    client[0].subscribe(topic.clone()).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
@@ -160,12 +160,12 @@ async fn single_client_unsubscribe() -> JasmineResult<()> {
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = true;
-    client[0].subscribe(topic.clone()).await?;
-    client[0].unsubscribe(topic.clone()).await?;
-    client[0].subscribe(topic.clone()).await?;
-    client[0].unsubscribe(topic.clone()).await?;
-    client[0].subscribe(topic.clone()).await?;
-    client[0].unsubscribe(topic.clone()).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
+    client[0].unsubscribe(topic.clone(), is_consistent).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
+    client[0].unsubscribe(topic.clone(), is_consistent).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
+    client[0].unsubscribe(topic.clone(), is_consistent).await?;
     let pub_result = client[0]
         .publish(topic.clone(), message, is_consistent)
         .await?;
@@ -194,7 +194,9 @@ async fn single_client_both() -> JasmineResult<()> {
     let messages = ["a", "b", "c", "d"];
     let is_consistent = [false, true];
 
-    client[0].subscribe(topics.clone()[0].to_string()).await?;
+    client[0]
+        .subscribe(topics.clone()[0].to_string(), is_consistent)
+        .await?;
     for i in 0..20 {
         for m1 in messages {
             client[1]
@@ -240,11 +242,21 @@ async fn multiple_client_unit_test() -> JasmineResult<()> {
     let messages2 = ["e", "f", "g"];
 
     let is_consistent = [false, true];
-    client[0].subscribe(topics.clone()[0].to_string()).await?;
-    client[0].subscribe(topics.clone()[1].to_string()).await?;
-    client[0].subscribe(topics.clone()[2].to_string()).await?;
-    client[1].subscribe(topics.clone()[0].to_string()).await?;
-    client[1].subscribe(topics.clone()[1].to_string()).await?;
+    client[0]
+        .subscribe(topics.clone()[0].to_string(), is_consistent[0])
+        .await?;
+    client[0]
+        .subscribe(topics.clone()[1].to_string(), is_consistent[0])
+        .await?;
+    client[0]
+        .subscribe(topics.clone()[2].to_string(), is_consistent[0])
+        .await?;
+    client[1]
+        .subscribe(topics.clone()[0].to_string(), is_consistent[0])
+        .await?;
+    client[1]
+        .subscribe(topics.clone()[1].to_string(), is_consistent[0])
+        .await?;
 
     for m1 in messages1 {
         client[2]
@@ -378,7 +390,7 @@ async fn single_client_no_consistent_shutdown() -> JasmineResult<()> {
     let topic = "CSE223".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = false;
-    client[0].subscribe(topic.clone()).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
@@ -412,7 +424,7 @@ async fn single_client_consistent_shutdown() -> JasmineResult<()> {
     let topic = "CSE222".to_string();
     let message = "Final project done.".to_string();
     let is_consistent = true;
-    client[0].subscribe(topic.clone()).await?;
+    client[0].subscribe(topic.clone(), is_consistent).await?;
     client[0]
         .publish(topic.clone(), message.clone(), is_consistent)
         .await?;
@@ -452,7 +464,9 @@ async fn single_client_both_shutdown() -> JasmineResult<()> {
     let messages2 = ["a2"];
     let is_consistent = [false, true];
 
-    client[0].subscribe(topics.clone()[0].to_string()).await?;
+    client[0]
+        .subscribe(topics.clone()[0].to_string(), is_consistent)
+        .await?;
     for i in 0..5 {
         for m1 in messages {
             client[1]
@@ -522,11 +536,21 @@ async fn multiple_client_unit_test_shutdown() -> JasmineResult<()> {
     let messages2 = ["e", "f", "g"];
 
     let is_consistent = [false, true];
-    client[0].subscribe(topics.clone()[0].to_string()).await?;
-    client[0].subscribe(topics.clone()[1].to_string()).await?;
-    client[0].subscribe(topics.clone()[2].to_string()).await?;
-    client[1].subscribe(topics.clone()[0].to_string()).await?;
-    client[1].subscribe(topics.clone()[1].to_string()).await?;
+    client[0]
+        .subscribe(topics.clone()[0].to_string(), is_consistent[0])
+        .await?;
+    client[0]
+        .subscribe(topics.clone()[1].to_string(), is_consistent[0])
+        .await?;
+    client[0]
+        .subscribe(topics.clone()[2].to_string(), is_consistent[0])
+        .await?;
+    client[1]
+        .subscribe(topics.clone()[0].to_string(), is_consistent[0])
+        .await?;
+    client[1]
+        .subscribe(topics.clone()[1].to_string(), is_consistent[0])
+        .await?;
 
     for m1 in messages1 {
         client[2]

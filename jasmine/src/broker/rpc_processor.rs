@@ -244,6 +244,7 @@ impl JasmineBroker for RpcProcessor {
             Some(logs) => logs,
             None => return Err(Status::unknown("No such topic")),
         };
+        drop(temp_all_logs);
         return Ok(Response::new(PullResponse {
             topic: topic.clone(),
             message: logs[offset as usize].content.clone(),
@@ -259,12 +260,13 @@ impl JasmineBroker for RpcProcessor {
 
         let topic = request.into_inner().topic;
 
-        match (*temp_logs).get(&topic) {
+        match (temp_logs).get(&topic) {
             Some(list) => {
                 list.pop_front();
             }
             None => {}
         }
+        drop(temp_logs);
 
         return Ok(Response::new(Empty {}));
     }
