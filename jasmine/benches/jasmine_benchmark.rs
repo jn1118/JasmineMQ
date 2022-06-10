@@ -9,7 +9,7 @@ use rskafka::{
 use std::{collections::BTreeMap, str::from_utf8, sync::Arc, thread::JoinHandle};
 use time::OffsetDateTime;
 use tokio::{
-    self,
+    self, runtime,
     sync::{
         mpsc::{channel, Sender},
         Mutex,
@@ -22,48 +22,37 @@ use jasmine::{
 };
 
 async fn kafka_establish_connection() -> PartitionClient {
+    dbg!("A");
     let connection = "164.92.70.147:9092".to_owned();
+    dbg!("B");
     let client = ClientBuilder::new(vec![connection]).build().await.unwrap();
+    dbg!("C");
     let topic = "benchmark";
+    dbg!("D");
     let controller_client = client.controller_client().await.unwrap();
+    dbg!("E");
     controller_client.create_topic(topic, 2, 1, 5_000).await;
+    dbg!("F");
     let partition_client = client.partition_client(topic.to_owned(), 0).await.unwrap();
+    dbg!("G");
     return partition_client;
 }
 
-async fn clean_record() {
+async fn kafka_clean_record() {
+    dbg!("1-1-1");
     let client = kafka_establish_connection().await;
-    client.delete_records(10000, 1000).await;
+    dbg!("1-1-2");
+    client.delete_records(1000, 1000).await;
+    dbg!("1-2-3");
 }
 
 async fn kafka_single_message() {
-    let partition_client = kafka_establish_connection().await;
-
-    let record = Record {
-        key: None,
-        value: Some(b"hello kafka".to_vec()),
-        headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
-        timestamp: OffsetDateTime::now_utc(),
-    };
-
-    partition_client
-        .produce(vec![record], Compression::default())
-        .await
-        .unwrap();
-
-    let (records, high_watermark) = partition_client
-        .fetch_records(0, 1..1_000_000, 1_000)
-        .await
-        .unwrap();
-}
-
-async fn kafka_single_message2() {
     tokio::spawn(async move {
         let publisher_client = kafka_establish_connection().await;
         let record = Record {
             key: None,
-            value: Some(b"we love zac".to_vec()),
-            headers: BTreeMap::from([("content-type".to_owned(), b"string".to_vec())]),
+            value: Some(b"hello kafka100".to_vec()),
+            headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
             timestamp: OffsetDateTime::now_utc(),
         };
         publisher_client
@@ -72,21 +61,16 @@ async fn kafka_single_message2() {
             .unwrap();
     });
 
-    let subscribe_handle = tokio::spawn(async move {
+    tokio::spawn(async move {
         let subscriber_client = kafka_establish_connection().await;
-        loop {
-            let (mut records, high_watermark) = subscriber_client
-                .fetch_records(0, 1..1_000_000, 1_000)
-                .await
-                .unwrap();
+        let (mut records, high_watermark) = subscriber_client
+            .fetch_records(0, 1..1_000_000, 1_000)
+            .await
+            .unwrap();
 
-            if from_utf8(records[0].record.value.as_mut().unwrap()) == Ok("we love zac") {
-                return;
-            }
-        }
+        let size = records.len();
+        if from_utf8(records[size - 1].record.value.as_mut().unwrap()) == Ok("hello kafka100") {}
     });
-
-    subscribe_handle.await;
 }
 
 async fn kafka_bulk_message_single_topic() {
@@ -165,19 +149,7 @@ fn bench1_1(c: &mut Criterion) {
             kafka_single_message().await;
         })
     });
-}
-
-fn bench1_2(c: &mut Criterion) {
-    let runtime = tokio::runtime::Builder::new_multi_thread().build().unwrap();
-    runtime.block_on(async move {
-        clean_record().await;
-    });
-
-    c.bench_function("kafka single latency2", |b| {
-        b.iter(|| async move {
-            kafka_single_message2().await;
-        })
-    });
+    dbg!("3");
 }
 
 fn bench2_1(c: &mut Criterion) {
@@ -203,9 +175,6 @@ fn bench3(c: &mut Criterion) {
         b.iter(|| async move { jamines_single_message() })
     });
 }
-
-criterion_group!(benches, bench1_2);
-criterion_main!(benches);
 
 fn gen_addrs(url: String, base: u64, num: u64) -> Vec<String> {
     let mut addrs = Vec::new();
@@ -267,3 +236,6 @@ async fn jamines_single_message() {
 
     // call spawn rpc process server
 }
+
+criterion_group!(benches, bench1_1, bench2_1, bench2_2, bench3);
+criterion_main!(benches);
