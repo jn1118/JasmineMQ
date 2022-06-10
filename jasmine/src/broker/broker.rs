@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     hash::Hash,
     net::ToSocketAddrs,
+    str::from_utf8,
     sync::Arc,
     time::Duration,
 };
@@ -26,7 +27,24 @@ use super::{
     manager::{self, Manager},
     rpc_processor::RpcProcessor,
 };
-use zookeeper::{Acl, CreateMode, ZooKeeper};
+use zookeeper::{Acl, CreateMode, Watcher, ZooKeeper};
+
+pub struct JasmineWatcher {}
+
+impl Watcher for JasmineWatcher {
+    fn handle(&self, event: zookeeper::WatchedEvent) {
+        match event.event_type {
+            zookeeper::WatchedEventType::None => {}
+            zookeeper::WatchedEventType::NodeCreated => {}
+            zookeeper::WatchedEventType::NodeDeleted => {}
+            zookeeper::WatchedEventType::NodeDataChanged => {}
+            zookeeper::WatchedEventType::NodeChildrenChanged => {}
+            zookeeper::WatchedEventType::DataWatchRemoved => {}
+            zookeeper::WatchedEventType::ChildWatchRemoved => {}
+        }
+    }
+}
+
 pub struct Broker {}
 
 impl Broker {
@@ -35,7 +53,8 @@ impl Broker {
         node_id: usize,
         shut_down_signal: Option<Receiver<()>>,
     ) -> JasmineResult<()> {
-        let my_addr = &addrs[node_id];
+        let my_addr = addrs[node_id].clone();
+        let addrs2 = addrs.clone();
 
         // Connect to ZooKeeper and create ephemeral node for this broker
         let zk_urls = "164.92.70.147:2181".to_string();
@@ -120,8 +139,57 @@ impl Broker {
 
         let recovery_handler = tokio::spawn(async move {
             loop {
-                let mut temp_keeper_client = keeper_client1.lock().await;
-                temp_keeper_client.get_children(&path, false);
+                tokio::time::sleep(Duration::from_secs(30)).await;
+
+                for i in 0..addrs2.len() {
+                    match JasmineBrokerClient::connect(format!("http://{}", addrs2[i])).await {
+                        Ok(_) => {}
+                        Err(_) => {
+                            let zk_urls = "164.92.70.147:2181".to_string();
+                            let my_zk = ZooKeeper::connect(
+                                &*zk_urls,
+                                Duration::from_secs(15),
+                                LoggingWatcher,
+                            )
+                            .unwrap();
+                            let path = format!("{}{}", "/brokers/", i);
+                            match my_zk.create(
+                                &path,
+                                Vec::new(),
+                                Acl::open_unsafe().clone(),
+                                CreateMode::Persistent,
+                            ) {
+                                Ok(_) => {
+                                    let logs = my_zk.get_data(&path, false).unwrap().0;
+                                    let logs_string = from_utf8(&logs).unwrap();
+                                    let mut transactions: Vec<JasmineLog> = Vec::new();
+
+                                    for string in logs_string.split("|") {
+                                        match serde_json::from_str(string) {
+                                            Ok(value) => {
+                                                transactions.push(value);
+                                            }
+                                            Err(_) => {}
+                                        }
+                                    }
+
+                                    for transaction in transactions {
+                                        let temp_manager = manager3.lock().await;
+                                        (*temp_manager)
+                                            .pub_message_to_subscriber(
+                                                transaction.topic,
+                                                transaction.message,
+                                                true,
+                                            )
+                                            .await;
+                                        drop(temp_manager);
+                                    }
+                                }
+                                Err(_) => {}
+                            }
+                        }
+                    }
+                }
             }
         });
 

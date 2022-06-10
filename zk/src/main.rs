@@ -10,7 +10,17 @@ use zookeeper::{Acl, CreateMode, WatchedEvent, Watcher, ZooKeeper};
 struct LoggingWatcher;
 impl Watcher for LoggingWatcher {
     fn handle(&self, e: WatchedEvent) {
-        println!("{:?}", e)
+        match e.event_type {
+            zookeeper::WatchedEventType::None => {}
+            zookeeper::WatchedEventType::NodeCreated => {}
+            zookeeper::WatchedEventType::NodeDeleted => {
+                // info!("{:?}", e);
+            }
+            zookeeper::WatchedEventType::NodeDataChanged => {}
+            zookeeper::WatchedEventType::NodeChildrenChanged => {}
+            zookeeper::WatchedEventType::DataWatchRemoved => {}
+            zookeeper::WatchedEventType::ChildWatchRemoved => {}
+        }
     }
 }
 
@@ -88,9 +98,9 @@ fn zk_example2() {
 
     println!("create 2: {:?}", path);
 
-    let children = zk.get_children("/testing3", false);
+    let children = zk.get_children("/testing3", true);
 
-    println!("children of /testing2 -> {:?}", children);
+    println!("children of /testing3 -> {:?}", children);
 
     let path = zk.set_data(
         "/testing3/t",
@@ -164,6 +174,8 @@ fn zk_example2() {
     }
 
     println!("haha: {}", transactions[0].message);
+
+    zk.delete("/testing3/t", None);
 }
 
 fn main() {

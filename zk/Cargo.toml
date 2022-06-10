@@ -7,8 +7,9 @@ edition = "2021"
 
 [dependencies]
 zookeeper = "0.6.1"
-serde = {version = "1.0.137", features = ["derive"]}
+
 util = {path = "../util"}
+serde = {version = "1.0.137", features = ["derive"]}
 serde_bytes = "0.11"
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
