@@ -39,12 +39,13 @@ async fn test() {
         .await
         .unwrap();
 
+    let my_string = "hello kafka".to_string();
     // produce some data
     println!("Producing");
     let record = Record {
         key: None,
-        value: Some(b"hello kafka".to_vec()),
-        headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
+        value: Some(my_string.as_bytes().to_vec()),
+        headers: BTreeMap::from([("content-type".to_owned(), b"string".to_vec())]),
         timestamp: OffsetDateTime::now_utc(),
     };
     partition_client
@@ -54,7 +55,7 @@ async fn test() {
 
     // consume data
     println!("Consuming");
-    let (records, high_watermark) = partition_client
+    let (mut records, high_watermark) = partition_client
         .fetch_records(
             0,            // offset
             1..1_000_000, // min..max bytes
@@ -63,4 +64,8 @@ async fn test() {
         .await
         .unwrap();
     println!("Records: {:#?}", records);
+    println!(
+        "testing {:?}",
+        std::str::from_utf8((records[0].record.value.as_mut().unwrap())) == Ok("hello kafka")
+    );
 }
