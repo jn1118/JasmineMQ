@@ -4,5 +4,6 @@ members = [
     "jasmine",
     "util",
     "kafka",
-    "zk"
+    "zk",
+    "cmd"
 ]

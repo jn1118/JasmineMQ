@@ -16,17 +16,19 @@ struct CLIData {
     client_num: usize,
     client_hashmap: HashMap<String, String>,
 }
-fn main() {
+#[tokio::main]
+async fn main() -> JasmineResult<()> {
     let args = JasmineArgs::parse();
     let a = args.command;
     match a {
-        UserCommand::StartBroker(a) => handle_start_broker(a),
-        UserCommand::Client(a) => handle_client(a),
-        UserCommand::Publish(a) => handle_publish(a),
-        UserCommand::Subscribe(a) => handle_subscribe(a),
-        UserCommand::Unubscribe(a) => handle_unsubscribe(a),
-        UserCommand::Retrieve(a) => handle_retrieve(a),
+        UserCommand::StartBroker(a) => handle_start_broker(a).await,
+        UserCommand::Client(a) => todo!(),
+        UserCommand::Publish(a) => todo!(),
+        UserCommand::Subscribe(a) => todo!(),
+        UserCommand::Unubscribe(a) => todo!(),
+        UserCommand::Retrieve(a) => todo!(),
     };
+    Ok(())
 }
 
 fn handle_client(input: CreateClient) {
@@ -57,9 +59,10 @@ fn generate_client_address(num: usize) -> String {
     return addr;
 }
 
-fn handle_start_broker(input: StartBroker) {
+async fn handle_start_broker(input: StartBroker) -> JasmineResult<()> {
     dbg!("start");
     bin_broker::main();
+    Ok(())
     // let mut brokers = Vec::new();
     // for i in BROKER_ADDRS {
     //     brokers.push(i.to_string())

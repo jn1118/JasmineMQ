@@ -5,7 +5,7 @@ pub fn main() -> JasmineResult<()> {
     for i in BROKER_ADDRS {
         brokers.push(i.to_string())
     }
-
+    dbg!("before ididid");
     spawn_broker(brokers);
     dbg!("idididid");
     // env_logger::builder()
@@ -71,9 +71,10 @@ fn spawn_broker(
     Vec<tokio::task::JoinHandle<JasmineResult<()>>>,
     Vec<Sender<()>>,
 ) {
+    dbg!("before spawn broker");
     let mut handles = vec![];
     let mut brokers_shutdown = vec![];
-
+    dbg!("inside spawn broker");
     for i in 0..3 {
         let (shut_tx, shut_rx) = tokio::sync::mpsc::channel(1);
         let l = tokio::spawn(jasmine::library::initialize_broker(

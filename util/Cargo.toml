@@ -10,6 +10,7 @@ bytes = "1.1.0"
 tonic = "0.6"
 prost = "0.9"
 zookeeper = "0.6.1"
+clap = { version = "3.0", features = ["derive"] }
 
 [build-dependencies]
 tonic-build = {version = "0.6", features = ["rustfmt"]}
