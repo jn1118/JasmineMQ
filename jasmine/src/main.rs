@@ -59,9 +59,21 @@ fn generate_client_address(num: usize) -> String {
     return addr;
 }
 
-async fn handle_start_broker(input: StartBroker) -> JasmineResult<()> {
+async fn handle_start_broker(nodeID: StartBroker) -> JasmineResult<()> {
     dbg!("start");
-    bin_broker::main();
+
+    let mut brokers = Vec::new();
+    for i in BROKER_ADDRS {
+        brokers.push(i.to_string())
+    }
+    let mut new_brokers = Vec::new();
+    new_brokers.push(brokers[nodeID.num].to_string());
+    // for i in BROKER_ADDRS {
+    //     brokers.push(i.to_string())
+    // }
+    let (shut_tx, shut_rx) = tokio::sync::mpsc::channel(1);
+    jasmine::library::initialize_broker(new_brokers, nodeID.num, shut_rx).await;
+    // bin_broker::main();
     Ok(())
     // let mut brokers = Vec::new();
     // for i in BROKER_ADDRS {

@@ -56,7 +56,7 @@ impl Broker {
         node_id: usize,
         shut_down_signal: Option<Receiver<()>>,
     ) -> JasmineResult<()> {
-        dbg!("11111");
+        dbg!(node_id);
         let zk_urls = "164.92.70.147:2181".to_string();
         let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
         let path = format!("{}{}", "/brokers/", node_id);
@@ -67,10 +67,9 @@ impl Broker {
             CreateMode::Ephemeral,
         )?;
 
-        dbg!("22222");
         let temp_addrs = addrs.clone();
         let addr = &addrs[node_id];
-
+        dbg!(addr);
         let processor = start_rpc_processor(addrs.clone(), node_id);
         let manager = start_manager(
             processor.subscriber_map.clone(),
@@ -96,7 +95,7 @@ impl Broker {
                 return Err(Box::new(error));
             }
         };
-
+        dbg!("22222");
         Server::builder()
             .add_service(JasmineBrokerServer::new(processor))
             .serve_with_shutdown(temp_addr.unwrap(), async {
