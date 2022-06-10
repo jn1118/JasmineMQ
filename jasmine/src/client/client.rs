@@ -82,7 +82,7 @@ impl Client {
             }
         }
     }
-    pub async fn subscribe(&self, topic: String, is_consistent: bool) -> JasmineResult<()> {
+    pub async fn subscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
         let broker_addr = find_leader(&topic.clone().to_string());
         dbg!("hahahha");
@@ -101,7 +101,6 @@ impl Client {
                     .subscribe(SubscribeRequest {
                         address: self.client_addr.to_string(),
                         topic: topic,
-                        is_consistent: is_consistent,
                     })
                     .await;
                 match result {
@@ -119,7 +118,7 @@ impl Client {
         }
     }
 
-    pub async fn unsubscribe(&self, topic: String, is_consistent: bool) -> JasmineResult<()> {
+    pub async fn unsubscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
         let broker_addr = find_leader(&topic.clone().to_string());
         let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
@@ -129,7 +128,6 @@ impl Client {
                     .unsubscribe(SubscribeRequest {
                         address: self.client_addr.to_string(),
                         topic: topic,
-                        is_consistent: is_consistent,
                     })
                     .await;
                 match result {

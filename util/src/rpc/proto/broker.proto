@@ -16,7 +16,6 @@ message PublishResponse {
 message SubscribeRequest{
     string address = 1;
     string topic = 2;
-    bool is_consistent = 3;
 }
 
 message SubscribeResponse {
@@ -56,8 +55,6 @@ service JasmineBroker {
     rpc hook (ConnectRequest) returns (Empty);
     rpc unhook (ConnectRequest) returns (Empty);
     rpc ping(Empty) returns (Empty);
-    rpc pull(PullRequest) returns (PullResponse);
-    rpc commit(CommitRequest) returns (Empty);
 
     
 }
