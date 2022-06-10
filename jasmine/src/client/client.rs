@@ -85,7 +85,7 @@ impl Client {
     pub async fn subscribe(&self, topic: String) -> JasmineResult<()> {
         // call method in broker
         let broker_addr = find_leader(&topic.clone().to_string());
-        eprintln!("hahahha");
+        dbg!("hahahha");
         dbg!(broker_addr.clone());
         let broker = JasmineBrokerClient::connect(format!("http://{}", broker_addr)).await;
         match broker {

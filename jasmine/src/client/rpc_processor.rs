@@ -32,6 +32,7 @@ impl JasmineClient for ClientRpcProcessor {
         request: tonic::Request<Message>,
     ) -> Result<tonic::Response<Bool>, tonic::Status> {
         dbg!("Send message rpc call back to client");
+        eprintln!("Send message rpc call back to client");
         let a = request.into_inner();
         let topic = a.topic;
         let message = a.message;
