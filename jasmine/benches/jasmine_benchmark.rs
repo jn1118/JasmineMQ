@@ -1,4 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+
 use rskafka::{
     client::{
         partition::{Compression, PartitionClient},
@@ -6,7 +7,13 @@ use rskafka::{
     },
     record::Record,
 };
-use std::{collections::BTreeMap, str::from_utf8, sync::Arc, thread::JoinHandle};
+use std::{
+    collections::BTreeMap,
+    str::from_utf8,
+    sync::Arc,
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 use time::OffsetDateTime;
 use tokio::{
     self, runtime,
@@ -22,16 +29,25 @@ use jasmine::{
 };
 
 async fn kafka_establish_connection() -> PartitionClient {
-    dbg!("A");
+    //dbg!("A");
     let connection = "164.92.70.147:9092".to_owned();
     dbg!("B");
-    let client = ClientBuilder::new(vec![connection]).build().await.unwrap();
+    let client = match ClientBuilder::new(vec![connection]).build().await {
+        Ok(c) => {
+            dbg!(&c);
+            c
+        }
+        Err(e) => {
+            dbg!(&e);
+            panic!();
+        }
+    };
     dbg!("C");
     let topic = "benchmark";
     dbg!("D");
     let controller_client = client.controller_client().await.unwrap();
     dbg!("E");
-    controller_client.create_topic(topic, 2, 1, 5_000).await;
+    //controller_client.create_topic(topic, 2, 1, 5_000).await;
     dbg!("F");
     let partition_client = client.partition_client(topic.to_owned(), 0).await.unwrap();
     dbg!("G");
@@ -136,16 +152,18 @@ async fn kafka_bulk_message_single_topic2() {
 }
 
 fn bench0(c: &mut Criterion) {
-    c.bench_function("kafka connection", |b| {
-        b.iter(|| async move {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka connection", move |b| {
+        b.to_async(&rt).iter(|| async move {
             kafka_establish_connection().await;
         })
     });
 }
 
 fn bench1_1(c: &mut Criterion) {
-    c.bench_function("kafka single latency", |b| {
-        b.iter(|| async move {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka single latency", move |b| {
+        b.to_async(&rt).iter(|| async move {
             kafka_single_message().await;
         })
     });
@@ -153,27 +171,30 @@ fn bench1_1(c: &mut Criterion) {
 }
 
 fn bench2_1(c: &mut Criterion) {
-    c.bench_function("kafka single topic mass message", |b| {
-        b.iter(|| async move {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka single topic mass message", move |b| {
+        b.to_async(&rt).iter(|| async move {
             kafka_bulk_message_single_topic().await;
         })
     });
 }
 
 fn bench2_2(c: &mut Criterion) {
-    c.bench_function("kafka single topic mass message2", |b| {
-        b.iter(|| async move {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka single topic mass message2", move |b| {
+        b.to_async(&rt).iter(|| async move {
             kafka_bulk_message_single_topic2().await;
         })
     });
 }
 
 fn bench3(c: &mut Criterion) {
-    let rt = tokio::runtime::Builder::new_multi_thread().build().unwrap();
+    
+    /*     let rt = tokio::runtime::Builder::new_multi_thread().build().unwrap();
     let res = rt.block_on(async move { kafka_establish_connection().await });
     c.bench_function("jasmine single message", |b| {
         b.iter(|| async move { jamines_single_message() })
-    });
+    }); */
 }
 
 fn gen_addrs(url: String, base: u64, num: u64) -> Vec<String> {
@@ -237,5 +258,5 @@ async fn jamines_single_message() {
     // call spawn rpc process server
 }
 
-criterion_group!(benches, bench1_1, bench2_1, bench2_2, bench3);
+criterion_group!(benches, bench1_1);
 criterion_main!(benches);
