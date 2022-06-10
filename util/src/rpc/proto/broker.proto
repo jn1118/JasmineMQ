@@ -42,9 +42,6 @@ message CommitRequest {
     string topic = 1;
 }
 
-
-
-
 message Empty {
     
 }

@@ -6,11 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .format(true)
         .out_dir("src/rpc")
         .compile(
-            &[
-                "src/rpc/proto/broker.proto",
-                "src/rpc/proto/client.proto",
-                "src/rpc/proto/storage.proto",
-            ],
+            &["src/rpc/proto/broker.proto", "src/rpc/proto/client.proto"],
             &["src/rpc/proto"],
         )?;
     return Ok(());
