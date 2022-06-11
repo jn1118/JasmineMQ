@@ -68,13 +68,11 @@ impl Broker {
             CreateMode::Ephemeral,
         );
         // match result_a {
-        //     Ok(_) => {
-
-        //     }
+        //     Ok(_) => {}
 
         //     Err(e) => {
-        //         dbg!()
-        //         return e;
+        //         dbg!(e);
+        //         panic!();
         //         // dbg!("error for the zookeeper setup for /brokers");
         //     }
         // }

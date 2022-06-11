@@ -8,7 +8,7 @@ use std::{
     net::ToSocketAddrs,
     sync::Arc,
 };
-use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::{Receiver, Sender};
 // use crate::client::client::JasmineBroker;
 // use crate::client::client::JasmineClient;
 use tokio::sync::Mutex;
@@ -60,6 +60,29 @@ pub async fn start_rpc_client_server(
         })
         .await?;
     return Ok(());
+}
+
+pub async fn start_rpc_client_server_benchmark(
+    rpc_server_addr: String,
+    new_rpc_client: ClientRpcProcessor,
+) -> JasmineResult<Sender<()>> {
+    // let new_rpc_client = ClientRpcProcessor::new(rpc_server_addr.clone());
+    // dbg!("001");
+    let temp_addr = match rpc_server_addr.to_socket_addrs() {
+        Ok(mut addr) => addr.next(),
+        Err(e) => return Err(Box::new(e)),
+    };
+    // dbg!("002");
+    let (mut sender, mut receiver) = tokio::sync::mpsc::channel::<()>(1);
+    tokio::spawn(async move {
+        Server::builder()
+            .add_service(JasmineClientServer::new(new_rpc_client))
+            .serve_with_shutdown(temp_addr.unwrap(), async {
+                receiver.recv().await;
+            })
+            .await;
+    });
+    return Ok(sender);
 }
 
 // use crate::broker::server::JasmineBroker;

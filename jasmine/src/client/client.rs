@@ -32,7 +32,7 @@ impl Client {
         return (Client {
             client_addr: addr,
             broker_addr: broker_addr,
-            message_map: message_map.clone(),
+            message_map: message_map,
         });
     }
 
@@ -42,7 +42,7 @@ impl Client {
         eprintln!("on message map: {:?}", temp_message_map);
         let value = temp_message_map.get(&(topic, is_consistent));
         let mut result = Vec::new();
-        dbg!("inside on_message");
+        //dbg!("inside on_message");
         // dbg!(temp_message_map.clone());
         match value {
             Some(array) => result = array.to_vec(),

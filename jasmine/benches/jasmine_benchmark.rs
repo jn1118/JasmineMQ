@@ -230,10 +230,15 @@ async fn start_broker(broker_count: u64) -> Vec<String> {
     return broker_addrs;
 }
 
-async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -> Vec<Client> {
+async fn start_client(
+    broker_addrs: Vec<String>,
+    client_count: u64,
+    base: u64,
+) -> (Vec<Client>, Vec<Sender<()>>) {
     // Initialize clients
     let client_addrs = gen_addrs("127.0.0.1".to_string(), base, client_count);
     let mut clients = Vec::new();
+    let mut shutdowns = Vec::new();
     dbg!("starting clients");
     dbg!(&client_addrs);
     for addr in client_addrs {
@@ -244,14 +249,17 @@ async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -
             rpc_processor.message_map.clone(),
         )
         .unwrap();
-        let client_rpc_handle = spawn_client_rpc_server(addr.clone(), rpc_processor);
+        let shutdown =
+            jasmine::library::start_rpc_client_server_benchmark(addr, rpc_processor).await;
         clients.push(client);
+        shutdowns.push(shutdown.unwrap());
     }
 
     // on_message returns corresponding message in (topic, is_consistent) tuple: Vec<String>
 
-    return clients;
+    return (clients, shutdowns);
 }
+
 fn spawn_client_rpc_server(
     rpc_server_addr: String,
     new_rpc_client: ClientRpcProcessor,
@@ -270,8 +278,8 @@ async fn jasmine_single_message() {
         "127.0.0.1:10001".to_string(),
         "127.0.0.1:10002".to_string(),
     ];
-    let sub_client = start_client(broker_addrs.clone(), 1, 30000).await;
-    let pub_client = start_client(broker_addrs.clone(), 1, 31000).await;
+    let (sub_client, sub_shutdowns) = start_client(broker_addrs.clone(), 1, 30000).await;
+    let (pub_client, pub_shutdowns) = start_client(broker_addrs.clone(), 1, 31000).await;
 
     match sub_client[0].subscribe("testing".to_string()).await {
         Ok(_) => {
@@ -301,11 +309,24 @@ async fn jasmine_single_message() {
 
     } */
 
-    tokio::time::sleep(Duration::from_secs(6)).await;
+    while result.len() <= 0 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        result = sub_client[0].on_message("testing".to_string(), false).await;
+    }
 
-    result = sub_client[0].on_message("testing".to_string(), false).await;
     dbg!(&result);
     dbg!("Jasmine Done!");
+
+    match sub_shutdowns[0].send(()).await {
+        Ok(_) => {
+            eprintln!("ok");
+        }
+        Err(_) => {
+            eprintln!("error");
+        }
+    };
+    pub_shutdowns[0].send(()).await;
+
     // call spawn rpc process server
 }
 
