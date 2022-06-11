@@ -52,6 +52,7 @@ impl JasmineClient for ClientRpcProcessor {
                 (*temp_message_map).insert((topic, is_consistent), vec_array);
             }
         }
+        eprintln!("map: {:?}", temp_message_map);
         // dbg!(temp_message_map.clone());
         drop(temp_message_map);
         return Ok(Response::new(Bool { value: true }));

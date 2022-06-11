@@ -85,7 +85,7 @@ impl Manager {
                         .await
                     {
                         Ok(_) => {
-                            dbg!("SEND OK");
+                            dbg!("SEND message OK, some");
                         }
                         Err(e) => {
                             dbg!(e);
@@ -104,7 +104,7 @@ impl Manager {
                             .await
                         {
                             Ok(_) => {
-                                dbg!("SEND OK");
+                                dbg!("SEND OK, newly created client");
                             }
                             Err(e) => {
                                 dbg!(e);

@@ -38,6 +38,8 @@ impl Client {
 
     pub async fn on_message(&self, topic: String, is_consistent: bool) -> Vec<String> {
         let mut temp_message_map = self.message_map.lock().await;
+
+        eprintln!("on message map: {:?}", temp_message_map);
         let value = temp_message_map.get(&(topic, is_consistent));
         let mut result = Vec::new();
         dbg!("inside on_message");

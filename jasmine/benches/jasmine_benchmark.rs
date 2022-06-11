@@ -301,6 +301,8 @@ async fn jasmine_single_message() {
 
     } */
 
+    tokio::time::sleep(Duration::from_secs(6)).await;
+
     result = sub_client[0].on_message("testing".to_string(), false).await;
     dbg!(&result);
     dbg!("Jasmine Done!");
