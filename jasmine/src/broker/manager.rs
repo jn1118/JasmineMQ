@@ -29,20 +29,29 @@ pub struct Manager {
 
 impl Manager {
     pub async fn process_message_queue(&mut self) -> JasmineResult<()> {
+        // dbg!("inside process message queue");
         let mut temp_message_queue = self.message_queue.lock().await;
+
         let (jid, topic, message, is_consistent) = match (*temp_message_queue).pop_front() {
-            Some(message) => message,
+            Some(message) => {
+                dbg!("ddffff");
+                dbg!(&message);
+                message
+            }
             None => {
                 return Ok(());
             }
         };
+        dbg!(&message);
         drop(temp_message_queue);
         match is_consistent {
             true => {
-                self.append_log(topic, message);
+                self.append_log(topic, message).await;
             }
             false => {
-                self.pub_message_to_subscriber(topic, message, is_consistent);
+                dbg!("inside false");
+                self.pub_message_to_subscriber(topic, message, is_consistent)
+                    .await;
             }
         }
         return Ok(());
@@ -54,6 +63,7 @@ impl Manager {
         message: String,
         is_consistent: bool,
     ) -> JasmineResult<()> {
+        dbg!("inside pub_message_to_subscriber");
         let temp_subscriber_map = self.subscriber_map.lock().await;
         let mut temp_client_map = self.client_map.lock().await;
         let subscriber_set = match (*temp_subscriber_map).get(&topic) {

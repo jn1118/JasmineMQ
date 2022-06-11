@@ -252,19 +252,32 @@ async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -
 
 async fn jasmine_single_message() {
     eprintln!("Start!");
-    let broker_addrs = start_broker(3).await;
+    let broker_addrs = vec![
+        "127.0.0.1:10000".to_string(),
+        "127.0.0.1:10001".to_string(),
+        "127.0.0.1:10002".to_string(),
+    ];
     let sub_client = start_client(broker_addrs.clone(), 1, 30000).await;
     let pub_client = start_client(broker_addrs.clone(), 1, 31000).await;
 
-    sub_client[0].subscribe("testing".to_string()).await;
+    match sub_client[0].subscribe("testing".to_string()).await {
+        Ok(_) => {
+            eprintln!("sub ok");
+        }
+        Err(e) => {
+            eprintln!("sub err {:?}", e);
+        }
+    };
 
     match pub_client[0]
         .publish("testing".to_string(), "testing2".to_string(), false)
         .await
     {
-        Ok(_) => {}
+        Ok(_) => {
+            eprintln!("pub ok");
+        }
         Err(e) => {
-            eprintln!("{:?}", e);
+            eprintln!("pub err {:?}", e);
         }
     };
 
@@ -274,7 +287,6 @@ async fn jasmine_single_message() {
     /*  while result.len() <= 0 {
 
     } */
-    tokio::time::sleep(Duration::from_secs(5)).await;
 
     result = sub_client[0].on_message("testing".to_string(), false).await;
     dbg!(&result);
