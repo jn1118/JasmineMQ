@@ -36,10 +36,12 @@ impl JasmineBroker for RpcProcessor {
     ) -> Result<Response<Empty>, Status> {
         let mut temp_client_map = self.client_map.lock().await;
         let address = request.into_inner().address;
+        dbg!("77777");
         match JasmineClientClient::connect(format!("http://{}", &address)).await {
             Ok(client) => {
                 (*temp_client_map).insert(address, client);
                 drop(temp_client_map);
+                dbg!("successfully insert into the map");
                 return Ok(Response::new(Empty {}));
             }
             Err(error) => {

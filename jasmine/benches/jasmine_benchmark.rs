@@ -22,6 +22,7 @@ use tokio::{
         Mutex,
     },
 };
+use util::result::JasmineResult;
 
 use jasmine::{
     client::{self, client::Client, rpc_processor::ClientRpcProcessor},
@@ -234,6 +235,7 @@ async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -
     let client_addrs = gen_addrs("127.0.0.1".to_string(), base, client_count);
     let mut clients = Vec::new();
     dbg!("starting clients");
+    dbg!(&client_addrs);
     for addr in client_addrs {
         let rpc_processor = ClientRpcProcessor::new(addr.clone());
         let client = library::initialize_front_end(
@@ -242,12 +244,23 @@ async fn start_client(broker_addrs: Vec<String>, client_count: u64, base: u64) -
             rpc_processor.message_map.clone(),
         )
         .unwrap();
+        let client_rpc_handle = spawn_client_rpc_server(addr.clone(), rpc_processor);
         clients.push(client);
     }
 
     // on_message returns corresponding message in (topic, is_consistent) tuple: Vec<String>
 
     return clients;
+}
+fn spawn_client_rpc_server(
+    rpc_server_addr: String,
+    new_rpc_client: ClientRpcProcessor,
+) -> tokio::task::JoinHandle<JasmineResult<()>> {
+    let handle = tokio::spawn(jasmine::library::start_rpc_client_server(
+        rpc_server_addr,
+        new_rpc_client,
+    ));
+    return handle;
 }
 
 async fn jasmine_single_message() {
