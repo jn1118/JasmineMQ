@@ -130,6 +130,7 @@ impl Broker {
         let manager1 = manager.clone();
         let manager2 = manager.clone();
         let manager3 = manager.clone();
+        let manager4 = manager.clone();
 
         // Drivers
 
@@ -145,6 +146,14 @@ impl Broker {
             loop {
                 let mut temp_manager = manager2.lock().await;
                 (*temp_manager).process_log().await;
+                drop(temp_manager);
+            }
+        });
+
+        let backup_handler = tokio::spawn(async move {
+            loop {
+                let mut temp_manager = manager4.lock().await;
+                (*temp_manager).back_up_log().await;
                 drop(temp_manager);
             }
         });
