@@ -55,6 +55,31 @@ async fn kafka_establish_connection() -> PartitionClient {
     return partition_client;
 }
 
+async fn kafka_create_conn_by_topic(topic: &str) -> PartitionClient {
+    //dbg!("A");
+    let connection = "164.92.70.147:9092".to_owned();
+    dbg!("B");
+    let client = match ClientBuilder::new(vec![connection]).build().await {
+        Ok(c) => {
+            dbg!(&c);
+            c
+        }
+        Err(e) => {
+            dbg!(&e);
+            panic!();
+        }
+    };
+    dbg!("C");
+    dbg!("D");
+    let controller_client = client.controller_client().await.unwrap();
+    dbg!("E");
+    //controller_client.create_topic(topic, 2, 1, 5_000).await;
+    dbg!("F");
+    let partition_client = client.partition_client(topic.to_owned(), 0).await.unwrap();
+    dbg!("G");
+    return partition_client;
+}
+
 async fn kafka_clean_record() {
     dbg!("1-1-1");
     let client = kafka_establish_connection().await;
@@ -84,11 +109,15 @@ async fn kafka_single_message() {
     if from_utf8(records[size - 1].record.value.as_mut().unwrap()) == Ok("hello kafka100") {}
 }
 
-async fn kafka_bulk_message_single_topic() {
-    let publisher_client = kafka_establish_connection().await;
-    let subscriber_client = kafka_establish_connection().await;
+async fn kafka_bulk_message_multiple_topic() {
+    let publisher_client1 = kafka_create_conn_by_topic("Alice").await;
+    let subscriber_client1 = kafka_create_conn_by_topic("Alice").await;
+    let publisher_client2 = kafka_create_conn_by_topic("Bob").await;
+    let subscriber_client2 = kafka_create_conn_by_topic("Bob").await;
+    let publisher_client3 = kafka_create_conn_by_topic("Charlie").await;
+    let subscriber_client3 = kafka_create_conn_by_topic("Charlie").await;
 
-    let record = Record {
+    let record1 = Record {
         key: None,
         value: Some(b"hello kafka".to_vec()),
         headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
@@ -96,17 +125,67 @@ async fn kafka_bulk_message_single_topic() {
     };
 
     tokio::spawn(async move {
-        for i in 0..100000 {
-            publisher_client
-                .produce(vec![record.clone()], Compression::default())
+        for i in 0..333333 {
+            publisher_client1
+                .produce(vec![record1.clone()], Compression::default())
                 .await
                 .unwrap();
         }
     });
 
     tokio::spawn(async move {
-        for i in 0..100000 {
-            let (records, high_watermark) = subscriber_client
+        for i in 0..333333 {
+            let (records, high_watermark) = subscriber_client1
+                .fetch_records(0, 1..1_000_000, 1_000)
+                .await
+                .unwrap();
+        }
+    });
+
+    let record2 = Record {
+        key: None,
+        value: Some(b"hello kafka".to_vec()),
+        headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
+        timestamp: OffsetDateTime::now_utc(),
+    };
+
+    tokio::spawn(async move {
+        for i in 0..333333 {
+            publisher_client2
+                .produce(vec![record2.clone()], Compression::default())
+                .await
+                .unwrap();
+        }
+    });
+
+    tokio::spawn(async move {
+        for i in 0..333333 {
+            let (records, high_watermark) = subscriber_client2
+                .fetch_records(0, 1..1_000_000, 1_000)
+                .await
+                .unwrap();
+        }
+    });
+
+    let record3 = Record {
+        key: None,
+        value: Some(b"hello kafka".to_vec()),
+        headers: BTreeMap::from([("foo".to_owned(), b"bar".to_vec())]),
+        timestamp: OffsetDateTime::now_utc(),
+    };
+
+    tokio::spawn(async move {
+        for i in 0..333333 {
+            publisher_client3
+                .produce(vec![record3.clone()], Compression::default())
+                .await
+                .unwrap();
+        }
+    });
+
+    tokio::spawn(async move {
+        for i in 0..333333 {
+            let (records, high_watermark) = subscriber_client3
                 .fetch_records(0, 1..1_000_000, 1_000)
                 .await
                 .unwrap();
@@ -154,7 +233,8 @@ fn bench0_1(c: &mut Criterion) {
         })
     });
 }
-
+// bench1: single topic
+// 1_1 kafka
 fn bench1_1(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     c.bench_function("kafka single latency", move |b| {
@@ -164,6 +244,7 @@ fn bench1_1(c: &mut Criterion) {
     });
 }
 
+// 1_2 jasmine, inconsistent mode
 fn bench1_2(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     c.bench_function("jasmine single latency", move |b| {
@@ -173,16 +254,40 @@ fn bench1_2(c: &mut Criterion) {
     });
 }
 
-fn bench2_1(c: &mut Criterion) {
+// 1_3 jasmine, consistent mode
+fn bench1_3(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
-    c.bench_function("kafka single topic mass message", move |b| {
+    c.bench_function("jasmine single latency", move |b| {
         b.to_async(&rt).iter(|| async move {
-            kafka_bulk_message_single_topic().await;
+            jasmine_single_message_c().await;
         })
     });
 }
 
+// bench2: multi-topic
+
+// 2_1 kafka
+fn bench2_1(c: &mut Criterion) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka multi topic mass message", move |b| {
+        b.to_async(&rt).iter(|| async move {
+            kafka_bulk_message_multiple_topic().await;
+        })
+    });
+}
+
+// 2_2 jasmine, inconsistent
 fn bench2_2(c: &mut Criterion) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    c.bench_function("kafka single topic mass message2", move |b| {
+        b.to_async(&rt).iter(|| async move {
+            jasmine_multiple_topic().await;
+        })
+    });
+}
+
+// 2_3 jasmine, consistent
+fn bench2_3(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     c.bench_function("kafka single topic mass message2", move |b| {
         b.to_async(&rt).iter(|| async move {
@@ -271,6 +376,130 @@ fn spawn_client_rpc_server(
     return handle;
 }
 
+async fn jasmine_multiple_topic() {
+    eprintln!("Start!");
+    let broker_addrs = vec![
+        "127.0.0.1:10000".to_string(),
+        "127.0.0.1:10001".to_string(),
+        "127.0.0.1:10002".to_string(),
+    ];
+
+    let (sub_client, sub_shutdowns) = start_client(broker_addrs.clone(), 3, 30000).await;
+    let (pub_client, pub_shutdowns) = start_client(broker_addrs.clone(), 1, 31000).await;
+
+    match sub_client[0].subscribe("testing".to_string()).await {
+        Ok(_) => {
+            eprintln!("sub ok");
+        }
+        Err(e) => {
+            eprintln!("sub err {:?}", e);
+        }
+    };
+    match sub_client[1].subscribe("testing1".to_string()).await {
+        Ok(_) => {
+            eprintln!("sub ok");
+        }
+        Err(e) => {
+            eprintln!("sub err {:?}", e);
+        }
+    };
+    match sub_client[2].subscribe("testing2".to_string()).await {
+        Ok(_) => {
+            eprintln!("sub ok");
+        }
+        Err(e) => {
+            eprintln!("sub err {:?}", e);
+        }
+    };
+
+    for i in 0..333333 {
+        match pub_client[0]
+            .publish("testing".to_string(), "testing2".to_string(), false)
+            .await
+        {
+            Ok(_) => {
+                eprintln!("pub ok");
+            }
+            Err(e) => {
+                eprintln!("pub err {:?}", e);
+            }
+        };
+    }
+
+    for i in 0..333333 {
+        match pub_client[1]
+            .publish("testing1".to_string(), "testing2".to_string(), false)
+            .await
+        {
+            Ok(_) => {
+                eprintln!("pub ok");
+            }
+            Err(e) => {
+                eprintln!("pub err {:?}", e);
+            }
+        };
+    }
+
+    for i in 0..333333 {
+        match pub_client[2]
+            .publish("testing2".to_string(), "testing2".to_string(), false)
+            .await
+        {
+            Ok(_) => {
+                eprintln!("pub ok");
+            }
+            Err(e) => {
+                eprintln!("pub err {:?}", e);
+            }
+        };
+    }
+
+    let mut result: Vec<String> = Vec::new();
+
+    while result.len() <= 0 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        result = sub_client[0].on_message("testing".to_string(), false).await;
+    }
+    while result.len() <= 0 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        result = sub_client[1].on_message("testing".to_string(), false).await;
+    }
+    while result.len() <= 0 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        result = sub_client[2].on_message("testing".to_string(), false).await;
+    }
+
+    match sub_shutdowns[0].send(()).await {
+        Ok(_) => {
+            eprintln!("ok");
+        }
+        Err(_) => {
+            eprintln!("error");
+        }
+    };
+    match sub_shutdowns[1].send(()).await {
+        Ok(_) => {
+            eprintln!("ok");
+        }
+        Err(_) => {
+            eprintln!("error");
+        }
+    };
+    match sub_shutdowns[2].send(()).await {
+        Ok(_) => {
+            eprintln!("ok");
+        }
+        Err(_) => {
+            eprintln!("error");
+        }
+    };
+    pub_shutdowns[0].send(()).await;
+    pub_shutdowns[1].send(()).await;
+    pub_shutdowns[2].send(()).await;
+
+    // call spawn rpc process server
+}
+
 async fn jasmine_single_message() {
     eprintln!("Start!");
     let broker_addrs = vec![
@@ -330,5 +559,63 @@ async fn jasmine_single_message() {
     // call spawn rpc process server
 }
 
-criterion_group!(benches, bench1_2);
+async fn jasmine_single_message_c() {
+    eprintln!("Start!");
+    let broker_addrs = vec![
+        "127.0.0.1:10000".to_string(),
+        "127.0.0.1:10001".to_string(),
+        "127.0.0.1:10002".to_string(),
+    ];
+    let (sub_client, sub_shutdowns) = start_client(broker_addrs.clone(), 1, 30000).await;
+    let (pub_client, pub_shutdowns) = start_client(broker_addrs.clone(), 1, 31000).await;
+
+    match sub_client[0].subscribe("testing".to_string()).await {
+        Ok(_) => {
+            eprintln!("sub ok");
+        }
+        Err(e) => {
+            eprintln!("sub err {:?}", e);
+        }
+    };
+
+    match pub_client[0]
+        .publish("testing".to_string(), "testing2".to_string(), true)
+        .await
+    {
+        Ok(_) => {
+            eprintln!("pub ok");
+        }
+        Err(e) => {
+            eprintln!("pub err {:?}", e);
+        }
+    };
+
+    let mut result: Vec<String> = Vec::new();
+
+    //result = sub_client[0].on_message("testing".to_string(), false).await;
+    /*  while result.len() <= 0 {
+
+    } */
+
+    while result.len() <= 0 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+        result = sub_client[0].on_message("testing".to_string(), true).await;
+    }
+
+    dbg!(&result);
+    dbg!("Jasmine Done!");
+
+    match sub_shutdowns[0].send(()).await {
+        Ok(_) => {
+            eprintln!("ok");
+        }
+        Err(_) => {
+            eprintln!("error");
+        }
+    };
+    pub_shutdowns[0].send(()).await;
+
+    // call spawn rpc process server
+}
+criterion_group!(benches, bench2_2);
 criterion_main!(benches);
