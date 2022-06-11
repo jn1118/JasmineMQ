@@ -138,6 +138,8 @@ impl Broker {
             }
         });
 
+        let backup_handler = tokio::spawn(async move { loop {} });
+
         let recovery_handler = tokio::spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(30)).await;
