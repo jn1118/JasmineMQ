@@ -61,12 +61,23 @@ impl Broker {
         let zk = ZooKeeper::connect(&*zk_urls, Duration::from_secs(15), LoggingWatcher).unwrap();
         let path = format!("{}{}", "/brokers/", node_id);
         dbg!("1111");
-        zk.create(
+        let result_a = zk.create(
             &path,
             Vec::new(),
             Acl::open_unsafe().clone(),
             CreateMode::Ephemeral,
-        )?;
+        );
+        // match result_a {
+        //     Ok(_) => {
+
+        //     }
+
+        //     Err(e) => {
+        //         dbg!()
+        //         return e;
+        //         // dbg!("error for the zookeeper setup for /brokers");
+        //     }
+        // }
         dbg!("2222");
         zk.create(
             "/logs",
@@ -125,7 +136,7 @@ impl Broker {
         let message_handler = tokio::spawn(async move {
             loop {
                 let mut temp_manager = manager1.lock().await;
-                (*temp_manager).process_message_queue();
+                (*temp_manager).process_message_queue().await;
                 drop(temp_manager);
             }
         });
@@ -133,7 +144,7 @@ impl Broker {
         let log_handler = tokio::spawn(async move {
             loop {
                 let mut temp_manager = manager2.lock().await;
-                (*temp_manager).process_log();
+                (*temp_manager).process_log().await;
                 drop(temp_manager);
             }
         });
